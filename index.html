@@ -1,0 +1,3680 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>T-CITY</title>
+<style>
+*{box-sizing:border-box}
+:root{font-family:Arial,Helvetica,sans-serif;background:#000;color:#f3f3f3}
+html,body{margin:0;width:100%;height:100%;background:#000}
+body{overflow:hidden}
+button{font:inherit}
+.screen{
+  position:fixed; inset:0;
+  background:#000; color:#f2f2f2;
+  padding:max(22px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
+  overflow:hidden;
+}
+.hidden{display:none!important}
+
+/* launch */
+#launch{display:flex;align-items:center;justify-content:center;user-select:none;touch-action:none;cursor:ns-resize}
+.launch-title{font-size:clamp(36px,9.5vw,54px);font-weight:400;letter-spacing:-.025em}
+.swipe{
+  position:absolute;left:50%;bottom:max(28px,env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  border-bottom:1px solid #737373;color:#d7d7d7;
+  padding:10px 2px 5px;font-size:11px;letter-spacing:.09em;
+  pointer-events:none;
+  animation:swipeHint 1.75s cubic-bezier(.2,.72,.2,1) infinite;
+  will-change:transform
+}
+.swipe span{margin-right:7px}
+@keyframes swipeHint{
+  0%,68%,100%{transform:translate(-50%,0)}
+  79%{transform:translate(-50%,-7px)}
+  90%{transform:translate(-50%,0)}
+}
+.fade-out{animation:fadeOut .24s ease forwards;pointer-events:none}
+@keyframes fadeOut{to{opacity:0}}
+
+/* intro */
+#launch{z-index:3}
+#intro{padding:0;z-index:2;opacity:0;pointer-events:none;transition:opacity .24s ease}
+#intro.active{opacity:1;pointer-events:auto}
+#intro.fade-final{opacity:0;pointer-events:none;transition:opacity .42s ease}
+#intro video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;transform:scale(1);transform-origin:50% 50%;will-change:transform}
+.skip{position:absolute;right:16px;top:max(16px,env(safe-area-inset-top));border:0;background:rgba(0,0,0,.2);color:#666;padding:8px;font-size:9px;letter-spacing:.13em}
+
+/* home */
+#home{display:flex;flex-direction:column;opacity:1;background:#000;z-index:4;pointer-events:none}
+#home.ready{pointer-events:auto}
+.topbar{
+  flex:0 0 clamp(220px,31dvh,250px);
+  position:relative;
+}
+
+/* The logo keeps the approved first-wave size.
+   Only the surrounding composition is given more breathing room on phones. */
+.brand-logo{
+  position:absolute;
+  left:50%;
+  top:clamp(62px,8.5dvh,76px);
+  width:145px;
+  height:145px;
+  transform:translateX(-50%);
+  opacity:1;
+  pointer-events:none;
+}
+.brand-logo img{
+  width:100%;height:100%;object-fit:contain;display:block;
+}
+
+/* Controls sit close to the safe-area corners instead of clustering around the logo. */
+.icon{
+  position:absolute;
+  top:0;
+  width:44px;height:44px;
+  border:0;background:transparent;color:#aaa;
+  display:grid;place-items:center;
+  opacity:0;
+  transition:transform .16s ease,color .16s ease;
+}
+.icon:first-child{left:-7px}
+.icon:last-child{right:-7px}
+.icon.show{animation:appear .34s ease .12s forwards}
+.icon:active{transform:scale(.92)}
+.icon svg{width:24px;height:24px;display:block}
+@keyframes appear{to{opacity:1}}
+
+/* New/unread notification marker. It disappears after the notification panel is opened. */
+.notify-dot{
+  position:absolute;
+  width:6px;height:6px;border-radius:50%;
+  background:#ff2d2d;
+  top:8px;right:7px;
+  opacity:0;transform:scale(.5);
+  transition:opacity .2s ease,transform .2s ease;
+}
+.icon.unread .notify-dot{opacity:1;transform:scale(1)}
+
+/* Flow layout prevents the car from ever sitting on top of the first menu row. */
+.car-stage{
+  position:relative;
+  z-index:0;
+  flex:0 0 auto;
+  width:min(calc(100% - 18px),356px);
+  aspect-ratio:664/121;
+  margin:clamp(7px,1.4dvh,13px) auto clamp(24px,3.6dvh,34px);
+  pointer-events:none;
+}
+.car-stage img{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:contain;display:block;
+}
+.car-body{
+  opacity:0;
+  filter:brightness(.34) contrast(1.08);
+}
+.car-lights{
+  opacity:0;
+  filter:brightness(.7) drop-shadow(0 0 0 rgba(255,255,255,0));
+}
+.car-stage.show .car-lights{
+  animation:headlightsWake 1.75s cubic-bezier(.18,.72,.2,1) .06s forwards;
+}
+.car-stage.show .car-body{
+  animation:bodyFromDark 1.55s cubic-bezier(.2,.72,.18,1) .28s forwards;
+}
+@keyframes headlightsWake{
+  0%{opacity:0;filter:brightness(.45) drop-shadow(0 0 0 rgba(255,255,255,0))}
+  18%{opacity:.16;filter:brightness(.68) drop-shadow(0 0 1px rgba(210,225,255,.08))}
+  48%{opacity:.56;filter:brightness(1.05) drop-shadow(0 0 3px rgba(210,225,255,.17))}
+  76%{opacity:.88;filter:brightness(1.22) drop-shadow(0 0 5px rgba(210,225,255,.23))}
+  100%{opacity:1;filter:brightness(1.30) drop-shadow(0 0 6px rgba(210,225,255,.26))}
+}
+@keyframes bodyFromDark{
+  0%{opacity:0;filter:brightness(.15) contrast(1.08)}
+  35%{opacity:.13;filter:brightness(.24) contrast(1.08)}
+  72%{opacity:.42;filter:brightness(.42) contrast(1.08)}
+  100%{opacity:.66;filter:brightness(.56) contrast(1.08)}
+}
+.menu{
+  flex:0 0 auto;
+  width:min(calc(100% - 16px),520px);
+  margin:0 auto;
+  display:flex;flex-direction:column;
+}
+.menu button{
+  display:grid;grid-template-columns:36px 1fr;gap:9px;align-items:center;
+  width:100%;padding:12px 0 11px;border:0;border-bottom:1px solid #252525;
+  background:transparent;color:#e8e8e8;text-align:left;opacity:0;transform:translateY(8px)
+}
+.menu button.show{animation:itemIn .46s cubic-bezier(.2,.72,.2,1) var(--d) forwards}
+@keyframes itemIn{
+  0%{opacity:0;transform:translateY(8px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+.menu button{transition:transform .15s ease,color .15s ease}
+.menu button:active{transform:translateX(4px)}
+.num{color:#5c5c5c;font-size:9px;letter-spacing:.1em}
+.label{font-size:clamp(18px,4.55vw,23px);letter-spacing:-.025em}
+.motto{
+  margin-top:auto;
+  padding-top:clamp(20px,3dvh,30px);
+  text-align:center;color:#606060;font-size:10.2px;letter-spacing:.16em;opacity:0
+}
+.motto.show{animation:appear .42s ease 1.20s forwards}
+
+/* Extra protection for shorter mobile browser viewports. */
+@media(max-height:720px){
+  .topbar{flex-basis:205px}
+  .brand-logo{top:55px;width:138px;height:138px}
+  .car-stage{margin-top:4px;margin-bottom:18px;width:min(calc(100% - 28px),338px)}
+  .menu button{padding:10px 0 9px}
+  .label{font-size:17.5px}
+  .motto{padding-top:16px;font-size:9.6px}
+}
+
+
+/* WAVE 02 — HISTORY / ABOUT */
+#history{
+  z-index:7;
+  padding:max(18px,env(safe-area-inset-top)) 22px max(22px,env(safe-area-inset-bottom));
+  touch-action:none;
+  user-select:none;
+}
+.history-top{
+  position:relative;
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:5;
+}
+.history-menu{
+  position:absolute;
+  left:-6px;top:2px;
+  width:44px;height:44px;
+  border:0;background:transparent;color:#9f9f9f;
+  display:grid;place-items:center;
+}
+.history-menu:active{transform:scale(.93)}
+.history-menu svg{width:22px;height:22px}
+.history-dots{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  height:20px;
+}
+.history-dot{
+  width:4px;height:4px;border-radius:50%;
+  background:#3c3c3c;
+  transition:width .24s ease,height .24s ease,background .24s ease,box-shadow .24s ease,transform .24s ease;
+}
+.history-dot.active{
+  width:6px;height:6px;
+  background:#cfcfcf;
+  box-shadow:0 0 7px rgba(255,255,255,.15);
+}
+.history-viewport{
+  position:absolute;
+  left:22px;right:22px;
+  top:78px;
+  bottom:max(25px,env(safe-area-inset-bottom));
+  overflow:hidden;
+}
+.history-card{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  justify-content:center;
+  max-width:520px;
+  margin:0 auto;
+  padding:12px 2px 24px;
+}
+.history-kicker{
+  color:#5f5f5f;
+  font-size:9px;
+  letter-spacing:.16em;
+  margin-bottom:16px;
+}
+.history-title{
+  margin:0 0 24px;
+  font-size:clamp(25px,7.1vw,38px);
+  line-height:1.04;
+  font-weight:400;
+  letter-spacing:-.035em;
+  max-width:11ch;
+}
+.history-title.wide{max-width:17ch}
+.history-copy{
+  color:#aaa;
+  font-size:clamp(14.5px,3.85vw,17.5px);
+  line-height:1.55;
+  letter-spacing:-.012em;
+  max-width:35ch;
+}
+.history-copy p{margin:0 0 13px}
+.history-copy p:last-child{margin-bottom:0}
+.history-em{
+  color:#ededed;
+  font-size:clamp(18px,4.8vw,23px);
+  line-height:1.28;
+  letter-spacing:-.022em;
+}
+.history-rule{
+  width:38px;height:1px;background:#3b3b3b;margin:23px 0;
+}
+.history-list{
+  display:grid;gap:8px;
+  margin-top:8px;
+  color:#b7b7b7;
+  font-size:clamp(14px,3.8vw,17px);
+}
+.history-list span{
+  opacity:0;transform:translateY(5px);
+}
+.history-card.page-3 .history-list span{
+  animation:historyLine .42s ease forwards;
+}
+.history-card.page-3 .history-list span:nth-child(1){animation-delay:.12s}
+.history-card.page-3 .history-list span:nth-child(2){animation-delay:.21s}
+.history-card.page-3 .history-list span:nth-child(3){animation-delay:.30s}
+.history-card.page-3 .history-list span:nth-child(4){animation-delay:.39s}
+.history-card.page-3 .history-list span:nth-child(5){animation-delay:.48s}
+@keyframes historyLine{to{opacity:1;transform:translateY(0)}}
+
+.history-city-lines{
+  position:absolute;inset:13% -8% 8%;
+  pointer-events:none;
+  opacity:.23;
+}
+.history-city-lines:before,
+.history-city-lines:after{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,transparent 8%,#202020 8.2%,transparent 8.4%),
+    linear-gradient(90deg,transparent 42%,#181818 42.15%,transparent 42.3%),
+    linear-gradient(90deg,transparent 76%,#202020 76.15%,transparent 76.3%),
+    linear-gradient(0deg,transparent 22%,#1c1c1c 22.15%,transparent 22.3%),
+    linear-gradient(0deg,transparent 61%,#191919 61.15%,transparent 61.3%);
+}
+.history-city-lines:after{transform:rotate(-11deg) scale(1.08);opacity:.6}
+
+.history-quote{
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px solid #242424;
+  color:#e4e4e4;
+  font-size:clamp(17px,4.6vw,22px);
+  line-height:1.38;
+  letter-spacing:-.02em;
+  max-width:30ch;
+}
+.history-honesty{
+  margin-top:23px;
+}
+.history-honesty h3{
+  margin:0 0 12px;
+  color:#ededed;
+  font-size:12px;font-weight:400;letter-spacing:.16em;
+}
+.history-trust{
+  margin-top:17px;
+  color:#ededed;
+  opacity:0;
+  animation:trustIn .55s ease .48s forwards;
+}
+@keyframes trustIn{to{opacity:1}}
+
+.history-final{
+  text-align:left;
+}
+.history-final .history-title{
+  max-width:none;
+  margin-bottom:34px;
+}
+.history-three{
+  display:grid;gap:5px;
+  margin-bottom:28px;
+  font-size:clamp(27px,7.7vw,41px);
+  line-height:1.05;
+  letter-spacing:-.04em;
+}
+.history-final-note{
+  color:#8f8f8f;
+  font-size:clamp(13.5px,3.6vw,16px);
+  line-height:1.55;
+  max-width:34ch;
+}
+.history-continues{
+  margin-top:auto;
+  padding-top:28px;
+  color:#5e5e5e;
+  font-size:11px;
+  letter-spacing:.08em;
+  font-style:italic;
+}
+
+/* Directional page motion — restrained, no flashy carousel effect. */
+.history-card.enter-next{animation:historyEnterNext .34s cubic-bezier(.2,.72,.2,1)}
+.history-card.enter-prev{animation:historyEnterPrev .34s cubic-bezier(.2,.72,.2,1)}
+@keyframes historyEnterNext{
+  from{opacity:0;transform:translateX(22px)}
+  to{opacity:1;transform:translateX(0)}
+}
+@keyframes historyEnterPrev{
+  from{opacity:0;transform:translateX(-22px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+@media(max-height:720px){
+  .history-viewport{top:70px}
+  .history-card{justify-content:flex-start;padding-top:34px}
+  .history-title{font-size:25px;margin-bottom:18px}
+  .history-copy{font-size:14px;line-height:1.48}
+  .history-copy p{margin-bottom:9px}
+  .history-rule{margin:17px 0}
+  .history-quote{margin-top:16px;padding-top:14px;font-size:17px}
+  .history-honesty{margin-top:16px}
+  .history-three{font-size:27px;margin-bottom:20px}
+}
+
+/* placeholders */
+#page{display:flex;flex-direction:column}
+#page:not(.hidden){animation:pageIn .22s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page-head{height:58px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;border-bottom:1px solid #1d1d1d;color:#737373;font-size:10px;letter-spacing:.14em;text-align:center}
+.back{border:0;background:transparent;color:#aaa;font-size:24px;width:44px;height:44px}
+.page-body{flex:1;display:grid;place-items:center;text-align:center}
+.page-body p{color:#777;font-size:16px;margin:0}
+
+/* sheet */
+#shade{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:10;display:flex;align-items:flex-end}
+.sheet{width:100%;min-height:34vh;background:#080808;border-top:1px solid #242424;padding:24px 22px max(32px,env(safe-area-inset-bottom));animation:sheet .35s ease}
+@keyframes sheet{from{transform:translateY(30px);opacity:0}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;font-size:22px;margin-bottom:26px}
+.close{border:0;background:transparent;color:#aaa;font-size:24px}
+.sheet p{color:#777;line-height:1.65;max-width:38ch;margin:0}
+
+/* desktop phone-like preview */
+@media(min-width:720px){
+  body{background:#101010;display:grid;place-items:center}
+  .screen{left:50%;right:auto;top:50%;bottom:auto;width:390px;height:844px;transform:translate(-50%,-50%);border:1px solid #202020}
+  #shade{left:50%;right:auto;top:50%;bottom:auto;width:390px;height:844px;transform:translate(-50%,-50%)}
+}
+
+/* =========================================================
+   WAVE 03 — SERVICES + CALCULATOR + BOOKING
+   ========================================================= */
+#flow{
+  z-index:8;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+}
+.flow-head{
+  flex:0 0 58px;
+  display:grid;
+  grid-template-columns:44px 1fr 44px;
+  align-items:center;
+  border-bottom:1px solid #1d1d1d;
+  position:relative;
+  z-index:5;
+}
+.flow-menu{
+  width:44px;height:44px;border:0;background:transparent;color:#9c9c9c;
+  display:grid;place-items:center;padding:0;
+}
+.flow-menu:active{transform:scale(.93)}
+.flow-menu svg{width:22px;height:22px}
+.flow-brand{
+  text-align:center;
+  color:#6c6c6c;
+  font-size:9px;
+  letter-spacing:.17em;
+}
+.flow-step{
+  text-align:right;
+  color:#4e4e4e;
+  font-size:8px;
+  letter-spacing:.1em;
+}
+.flow-body{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:24px 2px 150px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.flow-body::-webkit-scrollbar{display:none}
+.flow-enter{animation:flowEnter .25s cubic-bezier(.2,.72,.2,1)}
+@keyframes flowEnter{
+  from{opacity:0;transform:translateY(7px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.eyebrow{
+  color:#555;
+  font-size:9px;
+  letter-spacing:.16em;
+  margin-bottom:12px;
+}
+.flow-title{
+  margin:0;
+  font-size:clamp(27px,7.1vw,38px);
+  line-height:1.02;
+  font-weight:400;
+  letter-spacing:-.04em;
+}
+.flow-lead{
+  margin:14px 0 0;
+  color:#8a8a8a;
+  font-size:14px;
+  line-height:1.5;
+  max-width:34ch;
+}
+.flow-section{
+  margin-top:30px;
+}
+.flow-section-title{
+  color:#686868;
+  font-size:9px;
+  letter-spacing:.14em;
+  margin-bottom:12px;
+}
+.vehicle-grid{
+  display:grid;
+  gap:10px;
+  margin-top:26px;
+}
+.vehicle-card{
+  width:100%;
+  min-height:76px;
+  border:1px solid #242424;
+  background:#050505;
+  color:#d8d8d8;
+  padding:16px 17px;
+  text-align:left;
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  transition:border-color .18s ease,background .18s ease,transform .16s ease;
+}
+.vehicle-card:active{transform:scale(.99)}
+.vehicle-card.selected{
+  border-color:#7a7a7a;
+  background:#0a0a0a;
+}
+.vehicle-name{
+  font-size:18px;
+  letter-spacing:-.02em;
+}
+.vehicle-note{
+  margin-top:5px;
+  color:#5d5d5d;
+  font-size:10px;
+}
+.vehicle-arrow{color:#555;font-size:16px}
+
+.package-list{
+  display:grid;
+  gap:12px;
+  margin-top:22px;
+}
+.package-card{
+  border:1px solid #242424;
+  background:#050505;
+  padding:18px 17px 17px;
+  transition:border-color .18s ease,background .18s ease;
+}
+.package-card.selected{
+  border-color:#8d8d8d;
+  background:#0a0a0a;
+}
+.package-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+.package-name{
+  font-size:23px;
+  letter-spacing:-.035em;
+}
+.package-price{
+  text-align:right;
+  font-size:18px;
+  white-space:nowrap;
+}
+.package-time{
+  margin-top:5px;
+  color:#5d5d5d;
+  font-size:9px;
+  letter-spacing:.08em;
+}
+.package-desc{
+  margin:13px 0 0;
+  color:#8d8d8d;
+  font-size:13px;
+  line-height:1.48;
+}
+.package-includes{
+  margin:15px 0 0;
+  padding-top:14px;
+  border-top:1px solid #1c1c1c;
+  color:#656565;
+  font-size:11px;
+  line-height:1.55;
+}
+.package-pick{
+  margin-top:15px;
+  border:0;
+  border-bottom:1px solid #6d6d6d;
+  background:transparent;
+  color:#d9d9d9;
+  padding:4px 0 5px;
+  font-size:10px;
+  letter-spacing:.08em;
+}
+.custom-entry{
+  width:100%;
+  margin-top:12px;
+  padding:17px;
+  border:1px solid #303030;
+  background:transparent;
+  color:#dcdcdc;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.custom-entry strong{
+  font-size:14px;
+  font-weight:400;
+  letter-spacing:.04em;
+}
+.custom-entry span{color:#5e5e5e}
+
+.service-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:20px;
+}
+.service-card{
+  min-height:112px;
+  border:1px solid #242424;
+  background:#050505;
+  color:#d6d6d6;
+  padding:14px 13px 12px;
+  text-align:left;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  transition:border-color .17s ease,background .17s ease,transform .15s ease;
+}
+.service-card:active{transform:scale(.985)}
+.service-card.selected{
+  border-color:#8d8d8d;
+  background:#0b0b0b;
+}
+.service-card.included{
+  opacity:.4;
+  border-style:dashed;
+}
+.service-name{
+  font-size:13px;
+  line-height:1.24;
+}
+.service-price{
+  margin-top:12px;
+  color:#ababab;
+  font-size:12px;
+}
+.service-duration{
+  color:#555;
+  font-size:9px;
+  margin-top:4px;
+}
+.service-check{
+  position:absolute;
+  top:9px;right:10px;
+  color:#a8a8a8;
+  font-size:12px;
+  opacity:0;
+}
+.service-card.selected .service-check{opacity:1}
+.service-card.included .service-check{opacity:1;color:#666}
+.service-card.included .service-check::after{content:"В ПАКЕТЕ";font-size:7px;letter-spacing:.08em}
+
+.flow-note{
+  margin-top:22px;
+  padding-top:17px;
+  border-top:1px solid #202020;
+  color:#555;
+  font-size:10px;
+  line-height:1.5;
+}
+.flow-summary{
+  position:absolute;
+  left:18px;right:18px;
+  bottom:max(18px,env(safe-area-inset-bottom));
+  z-index:6;
+  background:rgba(5,5,5,.94);
+  backdrop-filter:blur(12px);
+  border:1px solid #292929;
+  padding:13px;
+  box-shadow:0 -12px 36px rgba(0,0,0,.62);
+}
+.summary-line{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+}
+.summary-meta{
+  color:#686868;
+  font-size:9px;
+  letter-spacing:.08em;
+}
+.summary-total{
+  margin-top:3px;
+  font-size:22px;
+  letter-spacing:-.03em;
+}
+.summary-time{
+  color:#8a8a8a;
+  font-size:11px;
+  text-align:right;
+}
+.summary-actions{
+  display:grid;
+  grid-template-columns:1fr 1.25fr;
+  gap:8px;
+  margin-top:11px;
+}
+.summary-actions.one{grid-template-columns:1fr}
+.flow-btn{
+  min-height:42px;
+  border:1px solid #343434;
+  background:#090909;
+  color:#ddd;
+  padding:0 13px;
+  font-size:10px;
+  letter-spacing:.08em;
+}
+.flow-btn.primary{
+  background:#e8e8e8;
+  color:#080808;
+  border-color:#e8e8e8;
+}
+.flow-btn:disabled{
+  opacity:.25;
+}
+.flow-back-link{
+  margin-top:17px;
+  border:0;background:transparent;color:#686868;
+  padding:5px 0;
+  font-size:10px;
+  letter-spacing:.08em;
+}
+
+.order-card{
+  margin-top:22px;
+  border-top:1px solid #282828;
+  border-bottom:1px solid #282828;
+}
+.order-row{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  padding:12px 0;
+  border-bottom:1px solid #191919;
+  font-size:12px;
+  color:#a6a6a6;
+}
+.order-row:last-child{border-bottom:0}
+.order-row span:last-child{
+  color:#d2d2d2;
+  white-space:nowrap;
+}
+.order-total{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  margin-top:18px;
+}
+.order-total strong{
+  font-size:25px;
+  font-weight:400;
+  letter-spacing:-.035em;
+}
+.order-total span{
+  color:#737373;
+  font-size:11px;
+}
+
+.date-strip{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:3px 0 8px;
+  margin-right:-18px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.date-strip::-webkit-scrollbar{display:none}
+.date-card{
+  flex:0 0 65px;
+  min-height:72px;
+  border:1px solid #252525;
+  background:#050505;
+  color:#bbb;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  padding:7px 4px;
+}
+.date-card .dow{
+  color:#595959;
+  font-size:8px;
+  letter-spacing:.08em;
+}
+.date-card .day{
+  font-size:20px;
+}
+.date-card .date-state{
+  min-height:10px;
+  color:#555;
+  font-size:7px;
+  letter-spacing:.06em;
+}
+.date-card.selected{
+  border-color:#939393;
+  background:#0b0b0b;
+  color:#eee;
+}
+.date-card.busy{
+  opacity:.26;
+}
+.time-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:9px;
+}
+.time-slot{
+  min-height:43px;
+  border:1px solid #292929;
+  background:#050505;
+  color:#aaa;
+  font-size:11px;
+}
+.time-slot.selected{
+  border-color:#9b9b9b;
+  color:#f1f1f1;
+  background:#0b0b0b;
+}
+.time-slot:disabled{
+  opacity:.22;
+}
+.booking-legend{
+  margin-top:10px;
+  display:flex;
+  gap:14px;
+  color:#4f4f4f;
+  font-size:8px;
+  letter-spacing:.06em;
+}
+.booking-legend span{display:flex;gap:6px;align-items:center}
+.booking-legend i{
+  width:6px;height:6px;border-radius:50%;background:#777;display:inline-block
+}
+.booking-legend .off i{background:#292929}
+.address-card{
+  margin-top:25px;
+  padding:18px 0 0;
+  border-top:1px solid #242424;
+}
+.address-name{
+  font-size:13px;
+  color:#c8c8c8;
+}
+.address-text{
+  margin-top:7px;
+  color:#707070;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.confirm-box{
+  display:grid;
+  place-items:center;
+  text-align:center;
+  min-height:calc(100dvh - 160px);
+  padding-bottom:50px;
+}
+.confirm-mark{
+  width:46px;height:46px;border:1px solid #626262;border-radius:50%;
+  display:grid;place-items:center;
+  color:#d5d5d5;
+  font-size:18px;
+  margin:0 auto 22px;
+}
+.confirm-title{
+  font-size:30px;
+  letter-spacing:-.04em;
+}
+.confirm-sub{
+  color:#777;
+  margin-top:12px;
+  font-size:13px;
+  line-height:1.55;
+}
+.confirm-details{
+  width:100%;
+  margin-top:28px;
+  border-top:1px solid #292929;
+  border-bottom:1px solid #292929;
+  text-align:left;
+}
+.confirm-actions{
+  width:100%;
+  display:grid;
+  gap:8px;
+  margin-top:22px;
+}
+.current-badge{
+  display:inline-block;
+  margin-top:18px;
+  border:1px solid #333;
+  padding:7px 9px;
+  color:#777;
+  font-size:8px;
+  letter-spacing:.11em;
+}
+
+/* first-use help — deliberately small, not a full-screen tutorial */
+.coach-wrap{
+  position:absolute;
+  inset:0;
+  z-index:30;
+  background:rgba(0,0,0,.42);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+  display:flex;
+  align-items:flex-end;
+  padding:18px 18px max(24px,env(safe-area-inset-bottom));
+}
+.coach-card{
+  width:100%;
+  border:1px solid #323232;
+  background:#090909;
+  padding:18px 17px 16px;
+  box-shadow:0 10px 40px rgba(0,0,0,.55);
+}
+.coach-kicker{
+  color:#595959;
+  font-size:8px;
+  letter-spacing:.14em;
+}
+.coach-title{
+  margin-top:9px;
+  font-size:17px;
+  letter-spacing:-.02em;
+}
+.coach-text{
+  margin-top:8px;
+  color:#858585;
+  font-size:12px;
+  line-height:1.5;
+}
+.coach-ok{
+  margin-top:14px;
+  border:0;
+  border-bottom:1px solid #737373;
+  background:transparent;
+  color:#d7d7d7;
+  padding:4px 0 5px;
+  font-size:9px;
+  letter-spacing:.1em;
+}
+
+.home-toast{
+  position:absolute;
+  left:18px;right:18px;
+  bottom:max(18px,env(safe-area-inset-bottom));
+  z-index:25;
+  border:1px solid #323232;
+  background:rgba(8,8,8,.96);
+  padding:14px 15px;
+  animation:toastIn .28s ease;
+}
+@keyframes toastIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.home-toast strong{
+  display:block;
+  font-size:12px;
+  font-weight:400;
+}
+.home-toast span{
+  display:block;
+  margin-top:5px;
+  color:#727272;
+  font-size:10px;
+  line-height:1.4;
+}
+
+@media(max-width:350px){
+  .service-grid{grid-template-columns:1fr}
+  .summary-actions{grid-template-columns:1fr}
+}
+@media(max-height:720px){
+  .flow-body{padding-top:18px;padding-bottom:140px}
+  .flow-title{font-size:25px}
+  .package-card{padding:15px}
+  .service-card{min-height:98px}
+}
+
+
+/* =========================================================
+   WAVE 03.1 — NOTIFICATIONS + SUPPORT + UX FIXES
+   ========================================================= */
+.sheet{
+  max-height:78dvh;
+  overflow-y:auto;
+}
+#sheetText{color:#777;line-height:1.55}
+.sheet-choice{
+  display:grid;
+  gap:10px;
+}
+.sheet-choice button,
+.sheet-choice a{
+  min-height:54px;
+  border:1px solid #2d2d2d;
+  background:#090909;
+  color:#ddd;
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  text-decoration:none;
+  font-size:12px;
+  letter-spacing:.06em;
+}
+.sheet-choice small{
+  color:#555;
+  font-size:9px;
+}
+.sheet-copy{
+  color:#777;
+  font-size:12px;
+  line-height:1.55;
+  margin-bottom:16px;
+}
+.sheet-danger{
+  border-color:#493030!important;
+  color:#d7b9b9!important;
+}
+.sheet-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:16px;
+}
+
+/* Generic full-screen utility surface for notifications and chat. */
+#aux{
+  z-index:9;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+}
+.aux-head{
+  flex:0 0 58px;
+  flex-shrink:0;
+  display:grid;
+  grid-template-columns:44px 1fr 44px;
+  align-items:center;
+  border-bottom:1px solid #1d1d1d;
+}
+.aux-back{
+  width:44px;height:44px;border:0;background:transparent;color:#aaa;
+  font-size:21px;text-align:left;padding:0 0 2px 4px;
+}
+.aux-title{
+  text-align:center;
+  color:#777;
+  font-size:9px;
+  letter-spacing:.16em;
+}
+.aux-side{
+  text-align:right;
+  color:#4e4e4e;
+  font-size:8px;
+  letter-spacing:.09em;
+}
+.aux-body{
+  position:relative;
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:24px 2px 30px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.aux-body::-webkit-scrollbar{display:none}
+
+/* Notifications */
+.notice-list{
+  display:grid;
+  margin-top:20px;
+}
+.notice-item{
+  width:100%;
+  border:0;
+  border-bottom:1px solid #202020;
+  background:transparent;
+  padding:17px 2px;
+  text-align:left;
+  color:#ddd;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:16px;
+  opacity:1;
+  transition:opacity .2s ease;
+}
+.notice-item.read{opacity:.38}
+.notice-tag{
+  color:#686868;
+  font-size:8px;
+  letter-spacing:.13em;
+}
+.notice-name{
+  margin-top:7px;
+  font-size:16px;
+  line-height:1.2;
+  letter-spacing:-.02em;
+}
+.notice-preview{
+  margin-top:6px;
+  color:#777;
+  font-size:11px;
+  line-height:1.4;
+}
+.notice-arrow{
+  align-self:center;
+  color:#454545;
+  font-size:16px;
+}
+.notice-detail{
+  padding-bottom:24px;
+}
+.notice-detail-tag{
+  color:#626262;
+  font-size:9px;
+  letter-spacing:.14em;
+}
+.notice-detail-title{
+  margin-top:13px;
+  font-size:29px;
+  line-height:1.04;
+  letter-spacing:-.04em;
+}
+.notice-detail-copy{
+  margin-top:20px;
+  color:#949494;
+  font-size:14px;
+  line-height:1.6;
+  max-width:35ch;
+}
+.notice-accent{
+  margin-top:24px;
+  padding:18px 0;
+  border-top:1px solid #242424;
+  border-bottom:1px solid #242424;
+  font-size:20px;
+  line-height:1.3;
+  letter-spacing:-.025em;
+}
+.people-progress{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  margin:24px 0 10px;
+}
+.person-svg{
+  width:31px;height:31px;
+  color:#d2d2d2;
+}
+.person-svg.pending{
+  color:#383838;
+}
+.progress-copy{
+  color:#777;
+  font-size:12px;
+  line-height:1.5;
+}
+.stars{
+  display:flex;
+  gap:9px;
+  margin-top:22px;
+}
+.star-btn{
+  border:0;background:transparent;
+  color:#333;
+  font-size:31px;
+  padding:0;
+  line-height:1;
+}
+.star-btn.active{color:#ddd}
+.feedback-label{
+  display:block;
+  margin-top:23px;
+  color:#656565;
+  font-size:9px;
+  letter-spacing:.12em;
+}
+.feedback-input{
+  width:100%;
+  min-height:116px;
+  margin-top:9px;
+  resize:none;
+  border:1px solid #292929;
+  background:#070707;
+  color:#ddd;
+  padding:13px;
+  outline:none;
+  font:inherit;
+  font-size:13px;
+  line-height:1.5;
+}
+.feedback-send{
+  width:100%;
+  min-height:46px;
+  margin-top:10px;
+  border:1px solid #e4e4e4;
+  background:#e4e4e4;
+  color:#080808;
+  font-size:10px;
+  letter-spacing:.09em;
+}
+.feedback-thanks{
+  margin-top:20px;
+  border-top:1px solid #292929;
+  padding-top:18px;
+  color:#aaa;
+  font-size:13px;
+  line-height:1.5;
+}
+
+/* Support chat */
+.aux-body.chat-mode{
+  min-height:0;
+  overflow:hidden!important;
+  overflow-y:hidden!important;
+  padding:0!important;
+  touch-action:none;
+}
+.chat-shell{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+.chat-scroll{
+  position:absolute;
+  left:0;right:0;top:0;
+  bottom:68px;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding:22px 2px 24px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+.chat-scroll::-webkit-scrollbar{display:none}
+.chat-day{
+  text-align:center;
+  color:#414141;
+  font-size:8px;
+  letter-spacing:.1em;
+  margin-bottom:18px;
+}
+.chat-messages{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.chat-row{
+  display:flex;
+  flex-direction:column;
+  max-width:84%;
+}
+.chat-row.bot{align-self:flex-start}
+.chat-row.user{align-self:flex-end;align-items:flex-end}
+.chat-bubble{
+  padding:11px 12px;
+  border:1px solid #242424;
+  background:#090909;
+  color:#bcbcbc;
+  font-size:12px;
+  line-height:1.5;
+}
+.chat-row.user .chat-bubble{
+  background:#151515;
+  border-color:#333;
+  color:#e1e1e1;
+}
+.chat-meta{
+  margin-top:4px;
+  color:#464646;
+  font-size:7px;
+  letter-spacing:.06em;
+}
+.quick-wrap{
+  align-self:flex-start;
+  width:min(92%,390px);
+  margin:2px 0 8px;
+}
+.quick-title{
+  color:#555;
+  font-size:8px;
+  letter-spacing:.12em;
+  margin:6px 0 8px;
+}
+.quick-list{
+  display:grid;
+  gap:7px;
+}
+.quick-question{
+  width:100%;
+  border:1px solid #292929;
+  background:#070707;
+  color:#aaa;
+  padding:10px 12px;
+  text-align:left;
+  font-size:11px;
+}
+.quick-note{
+  margin-top:8px;
+  color:#4d4d4d;
+  font-size:8px;
+  line-height:1.4;
+}
+.chat-composer{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:62px;
+  display:grid;
+  grid-template-columns:1fr 46px;
+  gap:8px;
+  align-items:center;
+  background:#000;
+  border-top:1px solid #1d1d1d;
+  padding:8px 0 8px;
+  z-index:4;
+}
+.chat-input{
+  height:44px;
+  border:1px solid #2a2a2a;
+  background:#080808;
+  color:#ddd;
+  outline:none;
+  padding:0 13px;
+  font:inherit;
+  font-size:12px;
+}
+.chat-send{
+  width:44px;height:44px;
+  border:1px solid #3a3a3a;
+  border-radius:50%;
+  background:#0a0a0a;
+  color:#ddd;
+  font-size:18px;
+}
+.chat-typing{
+  align-self:flex-start;
+  color:#555;
+  font-size:9px;
+  letter-spacing:.06em;
+  padding:2px 0 4px;
+}
+
+
+/* Cancellation screen */
+.cancelled-mark{
+  width:46px;height:46px;border:1px solid #555;border-radius:50%;
+  display:grid;place-items:center;
+  color:#aaa;font-size:20px;margin:0 auto 22px;
+}
+
+
+.preliminary-card{
+  margin-top:22px;
+  padding:17px 0 0;
+  border-top:1px solid #262626;
+}
+.preliminary-title{
+  color:#6a6a6a;
+  font-size:8px;
+  letter-spacing:.13em;
+}
+.preliminary-copy{
+  margin-top:10px;
+  color:#777;
+  font-size:11px;
+  line-height:1.55;
+}
+.preliminary-strong{
+  display:block;
+  margin-top:11px;
+  color:#b8b8b8;
+  font-size:11px;
+  line-height:1.5;
+}
+
+
+.aux-body.chat-mode{
+  position:relative;
+  overflow:hidden !important;
+  padding:0 !important;
+}
+.aux-body.chat-mode .chat-shell{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+}
+.aux-body.chat-mode .chat-scroll{
+  position:absolute;
+  left:0; right:0; top:0; bottom:74px;
+  overflow-y:auto;
+  padding:18px 0 28px;
+  -webkit-overflow-scrolling:touch;
+}
+.aux-body.chat-mode .chat-composer{
+  position:absolute !important;
+  left:0; right:0; bottom:0;
+  height:64px;
+  z-index:100;
+}
+
+.welcome-group{
+  align-self:flex-start;
+  width:min(92%,390px);
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-bottom:4px;
+}
+.welcome-group .chat-row{
+  max-width:100%;
+}
+.welcome-group .quick-wrap{
+  width:100%;
+  margin:0;
+  padding:10px 0 2px 10px;
+  border-left:1px solid #242424;
+}
+
+
+/* =========================================================
+   WAVE 04.0 — GARAGE
+   ========================================================= */
+#garage{
+  z-index:9;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+}
+.garage-head{
+  flex:0 0 58px;
+  display:grid;
+  grid-template-columns:44px 1fr 44px;
+  align-items:center;
+  border-bottom:1px solid #1d1d1d;
+  position:relative;
+  z-index:5;
+}
+.garage-back,.garage-profile{
+  width:44px;height:44px;border:0;background:transparent;color:#9c9c9c;padding:0;
+  display:grid;place-items:center;
+}
+.garage-back{font-size:21px;justify-content:start;padding-left:4px}
+.garage-profile svg{width:20px;height:20px}
+.garage-brand{text-align:center;color:#6c6c6c;font-size:9px;letter-spacing:.17em}
+.garage-body{
+  flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:24px 2px 38px;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.garage-body::-webkit-scrollbar{display:none}
+.garage-enter{animation:flowEnter .25s cubic-bezier(.2,.72,.2,1)}
+.garage-kicker{color:#555;font-size:9px;letter-spacing:.16em;margin-bottom:12px}
+.garage-title{margin:0;font-size:clamp(29px,7.6vw,40px);line-height:1;font-weight:400;letter-spacing:-.045em}
+.garage-lead{margin:13px 0 0;color:#7d7d7d;font-size:13px;line-height:1.5;max-width:34ch}
+.garage-list{display:grid;gap:10px;margin-top:26px}
+.garage-card{
+  width:100%;min-height:98px;border:1px solid #252525;background:#050505;color:#ddd;
+  display:grid;grid-template-columns:102px 1fr 18px;align-items:center;gap:12px;
+  padding:10px 12px 10px 8px;text-align:left;
+  transition:border-color .18s ease,background .18s ease,transform .16s ease;
+}
+.garage-card:active{transform:scale(.99);border-color:#555;background:#090909}
+.garage-thumb{height:75px;display:grid;place-items:center;overflow:hidden}
+.garage-thumb img{width:116px;height:78px;display:block;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
+.garage-card-brand{color:#555;font-size:8px;letter-spacing:.13em}
+.garage-card-name{margin-top:5px;font-size:17px;line-height:1.1;letter-spacing:-.02em}
+.garage-card-meta{margin-top:6px;color:#6e6e6e;font-size:9px;line-height:1.4}
+.garage-card-arrow{color:#444;font-size:17px}
+.garage-list-note{margin-top:17px;color:#454545;font-size:9px;line-height:1.5}
+
+/* Detailing bay scene: intentionally built in CSS so black cars remain visible. */
+.garage-hero{
+  position:relative;margin-top:17px;height:285px;border:1px solid #252525;overflow:hidden;
+  background:
+    linear-gradient(90deg,transparent 0 9%,rgba(255,255,255,.035) 9.2% 9.6%,transparent 9.8% 90%,rgba(255,255,255,.035) 90.2% 90.6%,transparent 90.8%),
+    linear-gradient(180deg,#111 0%,#090909 54%,#050505 55%,#0a0a0a 100%);
+}
+.garage-hero:before{
+  content:'';position:absolute;left:50%;top:20px;width:78%;height:8px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,#cfcfcf 18% 82%,transparent);opacity:.23;filter:blur(1px);
+  box-shadow:0 0 24px rgba(255,255,255,.12),0 110px 70px rgba(255,255,255,.035);
+}
+.garage-hero:after{
+  content:'';position:absolute;left:-15%;right:-15%;bottom:-35px;height:130px;
+  background:repeating-linear-gradient(90deg,transparent 0 72px,rgba(255,255,255,.018) 73px 74px),linear-gradient(180deg,rgba(255,255,255,.025),transparent 55%);
+  transform:perspective(220px) rotateX(60deg);transform-origin:bottom;
+}
+.garage-bay-lines{position:absolute;inset:0;pointer-events:none}
+.garage-bay-lines i{position:absolute;top:28px;bottom:72px;width:2px;background:#d8d8d8;opacity:.12;box-shadow:0 0 12px rgba(255,255,255,.12)}
+.garage-bay-lines i:first-child{left:22px}.garage-bay-lines i:last-child{right:22px}
+.garage-hero-car{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:100%;z-index:2}
+.garage-hero-car img{width:100%;height:auto;display:block;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 19px 12px rgba(0,0,0,.75))}
+.garage-hero-label{position:absolute;left:14px;top:13px;z-index:3;color:#555;font-size:7px;letter-spacing:.15em}
+.garage-car-head{margin-top:23px;display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+.garage-car-name{font-size:25px;line-height:1.02;letter-spacing:-.04em}
+.garage-car-plate{margin-top:7px;color:#808080;font-size:11px;letter-spacing:.08em}
+.garage-action{
+  flex:0 0 auto;border:1px solid #444;background:#0a0a0a;color:#ddd;min-height:40px;padding:0 14px;
+  font-size:9px;letter-spacing:.1em;
+}
+.garage-grid-actions{display:grid;gap:9px;margin-top:20px}
+.garage-nav-card{
+  width:100%;min-height:63px;border:1px solid #242424;background:#050505;color:#ddd;
+  display:grid;grid-template-columns:1fr auto;align-items:center;padding:0 15px;text-align:left;
+}
+.garage-nav-card strong{font-size:14px;font-weight:400;letter-spacing:-.01em}
+.garage-nav-card span{display:block;margin-top:5px;color:#565656;font-size:9px;line-height:1.35}
+.garage-nav-arrow{color:#444;font-size:16px}
+.garage-book{
+  width:100%;margin-top:10px;min-height:50px;border:1px solid #777;background:#111;color:#eee;
+  font-size:10px;letter-spacing:.12em;
+}
+
+.garage-section{margin-top:25px}
+.garage-section-title{color:#5e5e5e;font-size:8px;letter-spacing:.14em;margin-bottom:10px}
+.garage-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;padding:13px 0;border-bottom:1px solid #202020;align-items:start}
+.garage-row span:first-child{color:#6d6d6d;font-size:10px}
+.garage-row span:last-child{color:#d2d2d2;font-size:11px;text-align:right;max-width:210px;overflow-wrap:anywhere}
+.visit-card{border-bottom:1px solid #242424;padding:17px 0}
+.visit-date{color:#5a5a5a;font-size:8px;letter-spacing:.13em}
+.visit-services{margin-top:9px;color:#c8c8c8;font-size:13px;line-height:1.5}
+.visit-price{margin-top:8px;color:#737373;font-size:10px}
+
+.pref-copy{margin-top:14px;color:#777;font-size:12px;line-height:1.55;max-width:36ch}
+.pref-field{margin-top:19px}
+.pref-label{display:block;color:#626262;font-size:8px;letter-spacing:.13em;margin-bottom:8px}
+.pref-input,.pref-custom-name,.pref-custom-value{
+  width:100%;min-height:46px;border:1px solid #2b2b2b;background:#070707;color:#ddd;
+  padding:11px 12px;outline:none;font:inherit;font-size:12px;border-radius:0;
+}
+.pref-input:focus,.pref-custom-name:focus,.pref-custom-value:focus{border-color:#666}
+.pref-save,.pref-add{
+  width:100%;min-height:47px;margin-top:15px;border:1px solid #4b4b4b;background:#0a0a0a;color:#ddd;
+  font-size:9px;letter-spacing:.11em;
+}
+.pref-custom-block{margin-top:24px;padding-top:19px;border-top:1px solid #242424}
+.pref-custom-new{display:grid;gap:8px;margin-top:10px}
+.pref-custom-item{padding:13px 0;border-bottom:1px solid #202020}
+.pref-custom-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pref-custom-title{color:#777;font-size:9px;letter-spacing:.08em}
+.pref-delete{border:0;background:transparent;color:#494949;font-size:16px;padding:4px}
+.pref-custom-item input{margin-top:8px}
+.pref-status{margin-top:10px;color:#666;font-size:9px;min-height:14px}
+
+.profile-card{margin-top:26px;border:1px solid #252525;background:#050505;padding:18px}
+.profile-mark{width:48px;height:48px;border:1px solid #383838;border-radius:50%;display:grid;place-items:center;color:#777;margin-bottom:18px}
+.profile-mark svg{width:22px;height:22px}
+.profile-name{font-size:22px;letter-spacing:-.03em}
+.profile-phone{margin-top:7px;color:#777;font-size:11px}
+.profile-note{margin-top:19px;padding-top:16px;border-top:1px solid #222;color:#5d5d5d;font-size:10px;line-height:1.5}
+.garage-toast{margin-top:12px;color:#747474;font-size:9px;min-height:14px}
+
+@media(max-height:720px){
+  .garage-body{padding-top:18px}
+  .garage-hero{height:245px}
+  .garage-card{min-height:88px}
+}
+
+</style>
+</head>
+<body>
+
+<section id="launch" class="screen">
+  <div class="launch-title">T-CITY</div>
+  <div class="swipe" aria-hidden="true"><span>↑</span> SWIPE UP</div>
+</section>
+
+<section id="intro" class="screen">
+  <video id="introVideo" src="tcity-intro.mp4" muted playsinline></video>
+  <button class="skip">SKIP</button>
+</section>
+
+<section id="home" class="screen hidden">
+  <div class="topbar">
+    <button class="icon" id="supportBtn" aria-label="Поддержка">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5.2 5.5h13.6a2.7 2.7 0 0 1 2.7 2.7v6.3a2.7 2.7 0 0 1-2.7 2.7H10l-4.7 3.3.9-3.3h-1A2.7 2.7 0 0 1 2.5 14.5V8.2a2.7 2.7 0 0 1 2.7-2.7Z"
+          stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <div class="brand-logo" id="logo">
+      <img src="tcity-logo-final.png" alt="T-CITY">
+    </div>
+
+    <button class="icon unread" id="notifyBtn" aria-label="Уведомления">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M18.1 9.8c0-3.55-2.15-5.95-5.1-6.45V2.5a1 1 0 0 0-2 0v.85C8.05 3.85 5.9 6.25 5.9 9.8v3.15c0 .95-.35 1.85-1 2.55l-1.15 1.25h16.5L19.1 15.5a3.8 3.8 0 0 1-1-2.55V9.8Z"
+          stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9.4 19.1c.45 1.05 1.35 1.65 2.6 1.65s2.15-.6 2.6-1.65"
+          stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/>
+      </svg>
+      <i class="notify-dot" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="car-stage" id="carStage" aria-hidden="true">
+    <img class="car-body" src="tcity-car.png" alt="">
+    <img class="car-lights" src="tcity-headlights.png" alt="">
+  </div>
+
+  <nav class="menu">
+    <button data-page="history" style="--d:.34s"><span class="num">01</span><span class="label">История бренда</span></button>
+    <button data-page="services" style="--d:.51s"><span class="num">02</span><span class="label">Услуги и цены</span></button>
+    <button data-page="booking" style="--d:.68s"><span class="num">03</span><span class="label">Запись</span></button>
+    <button data-page="garage" style="--d:.85s"><span class="num">04</span><span class="label">Гараж</span></button>
+  </nav>
+  <div class="motto">ЭСТЕТИКА. ВНИМАНИЕ. ДОВЕРИЕ.</div>
+  <div id="homeToast" class="home-toast hidden"><strong>Запись сохранена</strong><span>Проверить её можно в разделе «Моя запись».</span></div>
+</section>
+
+
+<section id="history" class="screen hidden">
+  <header class="history-top">
+    <button class="history-menu" id="historyMenuBtn" aria-label="Главное меню">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="history-dots" id="historyDots" aria-label="Прогресс истории"></div>
+  </header>
+  <div class="history-viewport" id="historyViewport">
+    <article class="history-card" id="historyCard"></article>
+  </div>
+
+  <div id="historyCoach" class="coach-wrap hidden">
+    <div class="coach-card">
+      <div class="coach-kicker">ПОДСКАЗКА</div>
+      <div class="coach-title">Как листать историю</div>
+      <div class="coach-text">Свайпните влево или вправо — или просто нажимайте на левый / правый край экрана.</div>
+      <button class="coach-ok" id="historyCoachOk">ПРОДОЛЖИТЬ</button>
+    </div>
+  </div>
+</section>
+
+
+<section id="flow" class="screen hidden">
+  <header class="flow-head">
+    <button class="flow-menu" id="flowMenuBtn" aria-label="Главное меню">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="flow-brand">T-CITY</div>
+    <div class="flow-step" id="flowStep"></div>
+  </header>
+  <main class="flow-body" id="flowBody"></main>
+  <div id="flowSummary" class="flow-summary hidden"></div>
+
+  <div id="flowCoach" class="coach-wrap hidden">
+    <div class="coach-card">
+      <div class="coach-kicker">ПОДСКАЗКА</div>
+      <div class="coach-title" id="flowCoachTitle"></div>
+      <div class="coach-text" id="flowCoachText"></div>
+      <button class="coach-ok" id="flowCoachOk">ПРОДОЛЖИТЬ</button>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="garage" class="screen hidden">
+  <header class="garage-head">
+    <button class="garage-back" id="garageBackBtn" aria-label="Назад">←</button>
+    <div class="garage-brand" id="garageBrand">ГАРАЖ</div>
+    <button class="garage-profile" id="garageProfileBtn" aria-label="Профиль клиента">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="8.2" r="3.1" stroke="currentColor" stroke-width="1.35"/>
+        <path d="M5.5 19c.65-4 3-6 6.5-6s5.85 2 6.5 6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+  <main class="garage-body" id="garageBody"></main>
+
+  <div id="garageCoach" class="coach-wrap hidden">
+    <div class="coach-card">
+      <div class="coach-kicker">ПОДСКАЗКА</div>
+      <div class="coach-title" id="garageCoachTitle"></div>
+      <div class="coach-text" id="garageCoachText"></div>
+      <button class="coach-ok" id="garageCoachOk">ПОНЯЛ</button>
+    </div>
+  </div>
+</section>
+
+<section id="aux" class="screen hidden">
+  <header class="aux-head">
+    <button class="aux-back" id="auxBackBtn" aria-label="Назад">←</button>
+    <div class="aux-title" id="auxTitle">T-CITY</div>
+    <div class="aux-side" id="auxSide"></div>
+  </header>
+  <main class="aux-body" id="auxBody"></main>
+</section>
+
+<section id="page" class="screen hidden">
+  <header class="page-head"><button class="back">←</button><span>T-CITY</span><span></span></header>
+  <main class="page-body"><p id="pageText"></p></main>
+</section>
+
+<div id="shade" class="hidden">
+  <div class="sheet">
+    <div class="sheet-head"><span id="sheetTitle"></span><button class="close">×</button></div>
+    <div id="sheetText"></div>
+  </div>
+</div>
+
+<script>
+const launch=document.getElementById('launch');
+const intro=document.getElementById('intro');
+const introVideo=document.getElementById('introVideo');
+const home=document.getElementById('home');
+const history=document.getElementById('history');
+const historyCard=document.getElementById('historyCard');
+const historyDots=document.getElementById('historyDots');
+const historyViewport=document.getElementById('historyViewport');
+const historyMenuBtn=document.getElementById('historyMenuBtn');
+const flow=document.getElementById('flow');
+const flowBody=document.getElementById('flowBody');
+const flowStep=document.getElementById('flowStep');
+const flowSummary=document.getElementById('flowSummary');
+const flowMenuBtn=document.getElementById('flowMenuBtn');
+const flowCoach=document.getElementById('flowCoach');
+const flowCoachTitle=document.getElementById('flowCoachTitle');
+const flowCoachText=document.getElementById('flowCoachText');
+const flowCoachOk=document.getElementById('flowCoachOk');
+const historyCoach=document.getElementById('historyCoach');
+const historyCoachOk=document.getElementById('historyCoachOk');
+const homeToast=document.getElementById('homeToast');
+const aux=document.getElementById('aux');
+const auxBackBtn=document.getElementById('auxBackBtn');
+const auxTitle=document.getElementById('auxTitle');
+const auxSide=document.getElementById('auxSide');
+const auxBody=document.getElementById('auxBody');
+const garage=document.getElementById('garage');
+const garageBody=document.getElementById('garageBody');
+const garageBackBtn=document.getElementById('garageBackBtn');
+const garageProfileBtn=document.getElementById('garageProfileBtn');
+const garageBrand=document.getElementById('garageBrand');
+const garageCoach=document.getElementById('garageCoach');
+const garageCoachTitle=document.getElementById('garageCoachTitle');
+const garageCoachText=document.getElementById('garageCoachText');
+const garageCoachOk=document.getElementById('garageCoachOk');
+const page=document.getElementById('page');
+const pageText=document.getElementById('pageText');
+const logo=document.getElementById('logo');
+const carStage=document.getElementById('carStage');
+const supportBtn=document.getElementById('supportBtn');
+const notifyBtn=document.getElementById('notifyBtn');
+const shade=document.getElementById('shade');
+const sheetTitle=document.getElementById('sheetTitle');
+const sheetText=document.getElementById('sheetText');
+
+let startY=null;
+let activePointer=null;
+let introStarted=false;
+let homeStarted=false;
+let zoomRAF=0;
+
+function animateVideoZoom(){
+  if(!introStarted || homeStarted) return;
+  const t=introVideo.currentTime;
+  let scale=1;
+
+  const smooth=k=>k*k*(3-2*k);
+
+  if(t>=0.65 && t<2.05){
+    const k=smooth(Math.min(1,(t-0.65)/(2.05-0.65)));
+    scale=1+(0.20*k);
+  }else if(t>=2.05 && t<2.55){
+    const k=smooth(Math.min(1,(t-2.05)/(2.55-2.05)));
+    scale=1.20+((1.82-1.20)*k);
+  }else if(t>=2.55 && t<3.05){
+    scale=1.82;
+  }else if(t>=3.05 && t<3.52){
+    // Return to normal size only while the source frame is already pure black,
+    // so the viewer never sees the C ring or a zoom reset.
+    const k=smooth(Math.min(1,(t-3.05)/(3.52-3.05)));
+    scale=1.82+((1-1.82)*k);
+  }
+
+  introVideo.style.transform=`scale(${scale})`;
+  zoomRAF=requestAnimationFrame(animateVideoZoom);
+}
+
+function startIntro(){
+  if(introStarted) return;
+  introStarted=true;
+  introVideo.currentTime=0;
+  introVideo.playbackRate=1.18;
+  intro.classList.add('active');
+  launch.classList.add('fade-out');
+  const p=introVideo.play();
+  if(p && p.catch) p.catch(()=>{});
+  zoomRAF=requestAnimationFrame(animateVideoZoom);
+  setTimeout(()=>launch.classList.add('hidden'),260);
+}
+launch.addEventListener('pointerdown',e=>{
+  if(introStarted) return;
+  activePointer=e.pointerId;
+  startY=e.clientY;
+  try{launch.setPointerCapture(e.pointerId)}catch(_){ }
+});
+launch.addEventListener('pointerup',e=>{
+  if(activePointer!==e.pointerId) return;
+  const dy=startY===null?0:startY-e.clientY;
+  activePointer=null;
+  startY=null;
+  if(dy>48) startIntro();
+});
+launch.addEventListener('pointercancel',()=>{
+  activePointer=null;
+  startY=null;
+});
+
+function beginHomeBlend(immediate=false){
+  if(homeStarted) return;
+  homeStarted=true;
+  cancelAnimationFrame(zoomRAF);
+  introVideo.style.transform='scale(1)';
+  home.classList.remove('hidden');
+  requestAnimationFrame(()=>{
+    supportBtn.classList.add('show');
+    notifyBtn.classList.add('show');
+    carStage.classList.add('show');
+    document.querySelectorAll('.menu button').forEach(b=>b.classList.add('show'));
+    document.querySelector('.motto').classList.add('show');
+    if(immediate){
+      intro.classList.remove('active');
+      intro.classList.add('hidden');
+      home.classList.add('ready');
+      introVideo.pause();
+    }else{
+      intro.classList.add('fade-final');
+      setTimeout(()=>{
+        intro.classList.remove('active','fade-final');
+        intro.classList.add('hidden');
+        home.classList.add('ready');
+        introVideo.pause();
+      },430);
+    }
+  });
+}
+
+introVideo.addEventListener('timeupdate',()=>{
+  // The source animation has already docked the logo by this moment.
+  // Blend the real menu over that same held frame instead of cutting to a new scene.
+  if(introVideo.currentTime>=11.55) beginHomeBlend(false);
+});
+introVideo.addEventListener('ended',()=>beginHomeBlend(false));
+document.querySelector('.skip').addEventListener('click',()=>beginHomeBlend(true));
+
+const historyPages=[
+  {
+    cls:'page-1',
+    html:`
+      <div class="history-kicker">01 / 06 · T-CITY</div>
+      <h1 class="history-title wide">ИСТОРИЯ БРЕНДА</h1>
+      <div class="history-em">История начинается задолго<br>до первого клиента.</div>
+      <div class="history-continues">T-CITY · 2026</div>
+    `
+  },
+  {
+    cls:'page-2',
+    html:`
+      <div class="history-kicker">02 / 06</div>
+      <h1 class="history-title wide">С ЧЕГО ВСЁ НАЧАЛОСЬ</h1>
+      <div class="history-copy">
+        <p>Идея T-CITY появилась ещё в 16–17 лет.</p>
+        <p>Сначала это было простое понимание: если однажды хочется создать что-то действительно большое, нужно строить не только свою работу, а собственную систему.</p>
+        <p>Постепенно появились первые идеи, направления и понимание того, как они могут быть связаны между собой.</p>
+        <p>Со временем всё это превратилось в полноценный бизнес-план.</p>
+        <p>То, что когда-то существовало только в голове, стало настоящим проектом. Оригинал первого проекта сохранился и сегодня является частью истории T-CITY.</p>
+      </div>
+      <div class="history-rule"></div>
+      <div class="history-em">Из идеи — в систему.</div>
+    `
+  },
+  {
+    cls:'page-3',
+    html:`
+      <div class="history-kicker">03 / 06</div>
+      <h1 class="history-title wide">НЕ ОДИН БИЗНЕС</h1>
+      <div class="history-copy">
+        <p>T-CITY с самого начала задумывался шире одного направления.</p>
+        <p>Первой реальной точкой становится <span class="history-em">T-CITY | ESTETIC AUTO</span>.</p>
+        <p>Автомобильная эстетика — место, где идея впервые встречается с настоящими клиентами.</p>
+      </div>
+      <div class="history-list">
+        <span>Первые работы.</span>
+        <span>Первый опыт.</span>
+        <span>Первые стандарты.</span>
+        <span>Первые ошибки.</span>
+        <span>Первое доверие.</span>
+      </div>
+      <div class="history-rule"></div>
+      <div class="history-copy"><p>Детейлинг — не конечная точка.</p></div>
+      <div class="history-em">Это начало.</div>
+    `
+  },
+  {
+    cls:'page-4',
+    html:`
+      <div class="history-city-lines"></div>
+      <div class="history-kicker">04 / 06</div>
+      <h1 class="history-title">ПОЧЕМУ CITY</h1>
+      <div class="history-copy">
+        <p>Город состоит из разных мест, сервисов, производств и людей.</p>
+        <p>Каждая часть может существовать отдельно, но вместе они образуют одну систему.</p>
+        <p>Так появилась идея <span class="history-em">CITY</span>.</p>
+        <p>Со временем внутри T-CITY могут появляться разные направления, собственные продукты и производство.</p>
+        <p>Они могут заниматься совершенно разными вещами — но должны усиливать друг друга и оставаться частью одной культуры.</p>
+      </div>
+      <div class="history-rule"></div>
+      <div class="history-em">Не набор случайных компаний.</div>
+      <div class="history-copy" style="margin-top:12px"><p>Один бренд.<br>Одна система.</p></div>
+    `
+  },
+  {
+    cls:'page-5',
+    html:`
+      <div class="history-kicker">05 / 06</div>
+      <h1 class="history-title wide">ЧЕЛОВЕК ВАЖНЕЕ АВТОМОБИЛЯ</h1>
+      <div class="history-copy">
+        <p>Автомобиль — объект нашей работы.</p>
+        <p><span class="history-em">Человек — причина, ради которой существует сервис.</span></p>
+        <p>Поэтому качество для T-CITY — это не только результат работы. Важно, как человека встретили, как с ним разговаривали, что он почувствовал и как ему вернули автомобиль.</p>
+      </div>
+      <div class="history-honesty">
+        <h3>ЧЕСТНОСТЬ</h3>
+        <div class="history-copy">
+          <p>Если мы чего-то не знаем — лучше сказать об этом прямо.</p>
+          <p>Если услуга человеку не нужна — её не нужно навязывать.</p>
+          <p>Если результат имеет ограничения — человек должен знать об этом заранее.</p>
+          <p>Нам важнее долгие отношения с клиентом, чем одна лишняя проданная услуга.</p>
+        </div>
+        <div class="history-trust">Доверие начинается с честности.</div>
+      </div>
+    `
+  },
+  {
+    cls:'page-6 history-final',
+    html:`
+      <div class="history-kicker">06 / 06 · T-CITY</div>
+      <h1 class="history-title">ФИЛОСОФИЯ</h1>
+      <div class="history-three">
+        <span>ЭСТЕТИКА.</span>
+        <span>ВНИМАНИЕ.</span>
+        <span>ДОВЕРИЕ.</span>
+      </div>
+      <div class="history-final-note">
+        Эстетика — в том, что мы создаём.<br>
+        Внимание — в отношении к человеку и деталям.<br>
+        Доверие — в том, что остаётся после.
+      </div>
+      <div class="history-quote">
+        Мы не хотим просто обслуживать автомобили.<br>
+        Мы хотим создавать место, куда человеку приятно возвращаться.
+      </div>
+      <div class="history-continues">История продолжается.</div>
+    `
+  }
+];
+
+let historyIndex=0;
+let historyLocked=false;
+let historyPointer=null;
+let historyStartX=0;
+let historyStartY=0;
+
+function buildHistoryDots(){
+  historyDots.innerHTML='';
+  historyPages.forEach((_,i)=>{
+    const dot=document.createElement('span');
+    dot.className='history-dot'+(i===historyIndex?' active':'');
+    historyDots.appendChild(dot);
+  });
+}
+
+function renderHistory(direction='next',initial=false){
+  const p=historyPages[historyIndex];
+  historyCard.className='history-card '+p.cls;
+  historyCard.innerHTML=p.html;
+  buildHistoryDots();
+  if(!initial){
+    void historyCard.offsetWidth;
+    historyCard.classList.add(direction==='prev'?'enter-prev':'enter-next');
+  }
+}
+
+function storageGet(key){
+  try{return localStorage.getItem(key)}catch(_){return null}
+}
+function storageSet(key,value){
+  try{localStorage.setItem(key,value)}catch(_){}
+}
+function storageRemove(key){
+  try{localStorage.removeItem(key)}catch(_){}
+}
+
+function openHistory(){
+  home.classList.add('hidden');
+  page.classList.add('hidden');
+  flow.classList.add('hidden');
+  historyIndex=0;
+  renderHistory('next',true);
+  history.classList.remove('hidden');
+
+  if(!storageGet('tcity_history_tip_seen')){
+    historyCoach.classList.remove('hidden');
+  }
+}
+
+historyCoachOk.addEventListener('click',e=>{
+  e.stopPropagation();
+  storageSet('tcity_history_tip_seen','1');
+  historyCoach.classList.add('hidden');
+});
+
+function closeHistory(){
+  history.classList.add('hidden');
+  home.classList.remove('hidden');
+}
+
+function moveHistory(delta){
+  if(historyLocked) return;
+  const next=historyIndex+delta;
+  if(next<0 || next>=historyPages.length) return;
+  historyLocked=true;
+  historyIndex=next;
+  renderHistory(delta<0?'prev':'next',false);
+  setTimeout(()=>historyLocked=false,350);
+}
+
+historyMenuBtn.addEventListener('click',e=>{
+  e.stopPropagation();
+  closeHistory();
+});
+
+historyViewport.addEventListener('pointerdown',e=>{
+  historyPointer=e.pointerId;
+  historyStartX=e.clientX;
+  historyStartY=e.clientY;
+  try{historyViewport.setPointerCapture(e.pointerId)}catch(_){}
+});
+
+historyViewport.addEventListener('pointerup',e=>{
+  if(historyPointer!==e.pointerId) return;
+  const dx=e.clientX-historyStartX;
+  const dy=e.clientY-historyStartY;
+  historyPointer=null;
+
+  if(Math.abs(dx)>48 && Math.abs(dx)>Math.abs(dy)){
+    if(dx<0) moveHistory(1);
+    else moveHistory(-1);
+    return;
+  }
+
+  if(Math.abs(dx)<18 && Math.abs(dy)<18){
+    const rect=historyViewport.getBoundingClientRect();
+    const localX=e.clientX-rect.left;
+    if(localX>rect.width/2) moveHistory(1);
+    else moveHistory(-1);
+  }
+});
+
+historyViewport.addEventListener('pointercancel',()=>{historyPointer=null});
+
+
+/* =========================================================
+   WAVE 03 — DATA + SERVICES + CALCULATOR + BOOKING
+   ========================================================= */
+const VEHICLES={
+  sedan:{name:'Седан',note:'Легковой кузов'},
+  crossover:{name:'Кроссовер',note:'Средний кузов'},
+  suv:{name:'Внедорожник',note:'Крупный кузов'}
+};
+
+const PACKAGES=[
+  {
+    id:'base',name:'BASE',tag:'Повседневный уход',
+    prices:{sedan:1000,crossover:1200,suv:1400},hours:1,
+    desc:'Быстрый аккуратный уход за автомобилем.',
+    includes:'Двухфазная ручная мойка · диски · коврики · полная сушка',
+    includedIds:['wash','wheels','mats']
+  },
+  {
+    id:'care',name:'CARE',tag:'Кузов + салон',
+    prices:{sedan:1700,crossover:2000,suv:2300},hours:2,
+    desc:'Больше внимания салону и ежедневным деталям.',
+    includes:'Всё из BASE · пылесос · влажная уборка · стёкла · чернение резины',
+    includedIds:['wash','wheels','mats','vacuum','wet','windows','tires']
+  },
+  {
+    id:'detail',name:'DETAIL',tag:'Глубокий уход',
+    prices:{sedan:2700,crossover:3100,suv:3500},hours:3,
+    desc:'Более глубокая очистка кузова и салона.',
+    includes:'Трёхфазный уход · кузов · салон · багажник · пластик · резина · стёкла',
+    includedIds:['wash','wheels','mats','vacuum','wet','windows','tires','trunk','plastic','bodychem']
+  },
+  {
+    id:'premium',name:'PREMIUM',tag:'Максимальный комплекс',
+    prices:{sedan:4500,crossover:5000,suv:5500},hours:4,
+    desc:'Максимальная детализация и защитный финальный слой.',
+    includes:'Глубокая мойка · салон · диски · кузов · пластик · резина · кварцевая защита',
+    includedIds:['wash','wheels','mats','vacuum','wet','windows','tires','trunk','plastic','bodychem','quartz']
+  }
+];
+
+const SERVICES=[
+  {id:'wash',name:'Ручная мойка кузова',prices:{sedan:1000,crossover:1200,suv:1400},hours:1},
+  {id:'wheels',name:'Очистка дисков',prices:{sedan:300,crossover:400,suv:500},hours:.5},
+  {id:'mats',name:'Коврики',prices:{sedan:200,crossover:250,suv:300},hours:.5},
+  {id:'tires',name:'Чернение резины',prices:{sedan:200,crossover:250,suv:300},hours:.5},
+  {id:'vacuum',name:'Пылесос салона',prices:{sedan:300,crossover:400,suv:500},hours:.5},
+  {id:'wet',name:'Влажная уборка',prices:{sedan:300,crossover:400,suv:500},hours:.5},
+  {id:'windows',name:'Стёкла',prices:{sedan:300,crossover:350,suv:400},hours:.5},
+  {id:'trunk',name:'Багажник',prices:{sedan:300,crossover:400,suv:500},hours:.5},
+  {id:'plastic',name:'Уход за пластиком',prices:{sedan:300,crossover:400,suv:500},hours:.5},
+  {id:'steering',name:'Очистка руля',prices:{sedan:300,crossover:300,suv:300},hours:.5},
+  {id:'leathercare',name:'Кондиционер кожи',prices:{sedan:400,crossover:500,suv:600},hours:.5},
+  {id:'rain',name:'Антидождь',prices:{sedan:1500,crossover:1700,suv:1900},hours:1},
+  {id:'engine',name:'Двигатель + консервация',prices:{sedan:1500,crossover:1700,suv:1900},hours:1},
+  {id:'leather',name:'Чистка кожи',prices:{sedan:1500,crossover:1800,suv:2200},hours:1},
+  {id:'bodychem',name:'Химическая очистка кузова',prices:{sedan:1400,crossover:1600,suv:1800},hours:1},
+  {id:'tar',name:'Очистка битума',prices:{sedan:200,crossover:250,suv:300},hours:.5},
+  {id:'quartz',name:'Кварцевый состав',prices:{sedan:700,crossover:900,suv:1100},hours:1},
+  {id:'lights',name:'Полировка фар',prices:{sedan:1500,crossover:1500,suv:1500},hours:1},
+  {id:'expresspolish',name:'Экспресс-полировка + защита',prices:{sedan:10000,crossover:12000,suv:14000},hours:3},
+  {id:'ceramic',name:'Глубокая полировка + керамика',prices:{sedan:18000,crossover:21000,suv:24000},hours:4},
+  {id:'dryclean',name:'Химчистка салона',prices:{sedan:7000,crossover:8000,suv:10000},hours:4}
+];
+
+const flowState={
+  entry:'services',
+  vehicle:null,
+  packageId:null,
+  extras:new Set(),
+  dateKey:null,
+  dateIndex:null,
+  time:null,
+  garageCarId:null
+};
+
+function money(n){
+  return new Intl.NumberFormat('ru-RU').format(n)+' ₽';
+}
+function hourText(n){
+  const h=Math.max(1,Math.ceil(n));
+  if(h===1) return '≈ 1 час';
+  if(h>=2 && h<=4) return `≈ ${h} часа`;
+  return `≈ ${h} часов`;
+}
+function selectedPackage(){
+  return PACKAGES.find(p=>p.id===flowState.packageId)||null;
+}
+function includedSet(){
+  const p=selectedPackage();
+  return new Set(p?p.includedIds:[]);
+}
+function estimateWorkHours(pkg,extraIds){
+  const ids=[...extraIds];
+  const major4=ids.some(id=>id==='ceramic' || id==='dryclean');
+  const major3=ids.some(id=>id==='expresspolish');
+
+  // Time is an estimate of the whole job, NOT a sum of every small operation.
+  // Standard combinations are intentionally capped at 4 hours in the prototype.
+  if(pkg){
+    let estimate=pkg.hours;
+    if(major4) estimate=Math.max(estimate,4);
+    else if(major3) estimate=Math.max(estimate,3);
+
+    if(ids.length>=3 && ids.length<=5) estimate=Math.max(estimate,Math.min(4,pkg.hours+1));
+    if(ids.length>=6) estimate=Math.max(estimate,Math.min(4,pkg.hours+2));
+    return Math.min(4,Math.max(1,estimate));
+  }
+
+  if(ids.length===0) return 0;
+  let estimate=1;
+  if(ids.length>=3) estimate=2;
+  if(ids.length>=6) estimate=3;
+  if(ids.length>=10) estimate=4;
+  if(major3) estimate=Math.max(estimate,3);
+  if(major4) estimate=4;
+  return Math.min(4,estimate);
+}
+
+function calcSelection(){
+  const vehicle=flowState.vehicle;
+  if(!vehicle) return {total:0,hours:0,count:0,rows:[]};
+
+  let total=0;
+  let rows=[];
+  const p=selectedPackage();
+
+  if(p){
+    total+=p.prices[vehicle];
+    rows.push({name:`${p.name} · ${p.tag}`,price:p.prices[vehicle]});
+  }
+
+  const included=includedSet();
+  const actualExtras=new Set();
+  SERVICES.forEach(s=>{
+    if(flowState.extras.has(s.id) && !included.has(s.id)){
+      total+=s.prices[vehicle];
+      actualExtras.add(s.id);
+      rows.push({name:s.name,price:s.prices[vehicle]});
+    }
+  });
+
+  const hours=estimateWorkHours(p,actualExtras);
+  return {total,hours,count:rows.length,rows};
+}
+function resetFlowSelection(keepEntry=true){
+  const entry=flowState.entry;
+  flowState.vehicle=null;
+  flowState.packageId=null;
+  flowState.extras=new Set();
+  flowState.dateKey=null;
+  flowState.dateIndex=null;
+  flowState.time=null;
+  flowState.garageCarId=null;
+  if(keepEntry) flowState.entry=entry;
+}
+function showFlowCoach(kind){
+  if(kind==='vehicle'){
+    if(storageGet('tcity_vehicle_tip_seen')) return;
+    flowCoachTitle.textContent='Сначала выберите автомобиль';
+    flowCoachText.textContent='Цены и время автоматически подстроятся под выбранный тип кузова.';
+    flowCoach.dataset.key='tcity_vehicle_tip_seen';
+  }else{
+    if(storageGet('tcity_custom_tip_seen')) return;
+    flowCoachTitle.textContent='Соберите свой набор';
+    flowCoachText.textContent='Нажимайте на нужные услуги. Выбранные позиции подсветятся, а итоговая сумма и ориентировочное время всего комплекса появятся внизу.';
+    flowCoach.dataset.key='tcity_custom_tip_seen';
+  }
+  flowCoach.classList.remove('hidden');
+}
+flowCoachOk.addEventListener('click',()=>{
+  const key=flowCoach.dataset.key;
+  if(key) storageSet(key,'1');
+  flowCoach.classList.add('hidden');
+});
+
+function setFlowStep(text){
+  flowStep.textContent=text||'';
+}
+function showFlow(){
+  history.classList.add('hidden');
+  page.classList.add('hidden');
+  garage.classList.add('hidden');
+  home.classList.add('hidden');
+  flow.classList.remove('hidden');
+}
+function closeFlow(){
+  flow.classList.add('hidden');
+  flowSummary.classList.add('hidden');
+  home.classList.remove('hidden');
+}
+flowMenuBtn.addEventListener('click',closeFlow);
+
+function renderVehicle(entry='services'){
+  flowState.entry=entry;
+  resetFlowSelection(true);
+  showFlow();
+  setFlowStep('01 / 03');
+  flowSummary.classList.add('hidden');
+
+  const title=entry==='booking'?'ЗАПИСЬ':'УСЛУГИ И ЦЕНЫ';
+  flowBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">T-CITY | ESTETIC AUTO</div>
+      <h1 class="flow-title">${title}</h1>
+      <p class="flow-lead">Выберите тип кузова. После этого покажем цены именно для вашего автомобиля.</p>
+      <div class="vehicle-grid">
+        ${Object.entries(VEHICLES).map(([id,v])=>`
+          <button class="vehicle-card" data-vehicle="${id}">
+            <span>
+              <span class="vehicle-name">${v.name}</span>
+              <span class="vehicle-note">${v.note}</span>
+            </span>
+            <span class="vehicle-arrow">→</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="flow-note">Стоимость может измениться после осмотра автомобиля при сильном загрязнении или нестандартном состоянии.</div>
+    </div>
+  `;
+  flowBody.scrollTop=0;
+  flowBody.querySelectorAll('[data-vehicle]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      flowState.vehicle=btn.dataset.vehicle;
+      renderPackages();
+    });
+  });
+  setTimeout(()=>showFlowCoach('vehicle'),180);
+}
+
+function renderPackages(){
+  showFlow();
+  setFlowStep('02 / 03');
+  const v=flowState.vehicle;
+  const garageCar=flowState.garageCarId ? GARAGE_CARS.find(c=>c.id===flowState.garageCarId) : null;
+  const vehicleName=garageCar ? garageCar.name : VEHICLES[v].name;
+
+  flowBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">${vehicleName.toUpperCase()}</div>
+      <h1 class="flow-title">ВЫБЕРИТЕ УХОД</h1>
+      <p class="flow-lead">Готовый комплекс — или соберите свой набор услуг.</p>
+
+      <div class="package-list">
+        ${PACKAGES.map(p=>`
+          <article class="package-card ${flowState.packageId===p.id?'selected':''}" data-package-card="${p.id}">
+            <div class="package-top">
+              <div>
+                <div class="package-name">${p.name}</div>
+                <div class="package-time">${p.tag.toUpperCase()} · ${hourText(p.hours)}</div>
+              </div>
+              <div class="package-price">${money(p.prices[v])}</div>
+            </div>
+            <p class="package-desc">${p.desc}</p>
+            <div class="package-includes">${p.includes}</div>
+            <button class="package-pick" data-package="${p.id}">${flowState.packageId===p.id?'ВЫБРАНО':'ВЫБРАТЬ'}</button>
+          </article>
+        `).join('')}
+      </div>
+
+      <button class="custom-entry" id="customOnly">
+        <strong>СОБРАТЬ СВОЮ</strong><span>→</span>
+      </button>
+
+      <button class="flow-back-link" id="backVehicle">← ИЗМЕНИТЬ ТИП КУЗОВА</button>
+      <div class="flow-note">Пакет можно дополнить отдельными услугами. Цена всегда пересчитывается для выбранного типа кузова.</div>
+    </div>
+  `;
+
+  flowBody.scrollTop=0;
+  flowBody.querySelectorAll('[data-package]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      flowState.packageId=btn.dataset.package;
+      flowState.extras=new Set();
+      flowState.dateKey=null;
+      flowState.time=null;
+      renderPackages();
+    });
+  });
+  document.getElementById('customOnly').addEventListener('click',()=>{
+    flowState.packageId=null;
+    flowState.extras=new Set();
+    renderCustom();
+  });
+  document.getElementById('backVehicle').addEventListener('click',()=>{
+    if(flowState.entry==='garage' && flowState.garageCarId) showGarageCar(flowState.garageCarId);
+    else renderVehicle(flowState.entry);
+  });
+
+  if(flowState.packageId){
+    renderSelectionSummary(true);
+  }else{
+    flowSummary.classList.add('hidden');
+  }
+}
+
+function renderSelectionSummary(packageMode=false){
+  const calc=calcSelection();
+  if(calc.count===0){
+    flowSummary.classList.add('hidden');
+    return;
+  }
+  flowSummary.classList.remove('hidden');
+
+  const buttons=packageMode?`
+    <div class="summary-actions">
+      <button class="flow-btn" id="addExtras">ДОБАВИТЬ УСЛУГИ +</button>
+      <button class="flow-btn primary" id="goBooking">ПРОДОЛЖИТЬ</button>
+    </div>
+  `:`
+    <div class="summary-actions one">
+      <button class="flow-btn primary" id="goBooking">ПРОДОЛЖИТЬ</button>
+    </div>
+  `;
+
+  flowSummary.innerHTML=`
+    <div class="summary-line">
+      <div>
+        <div class="summary-meta">ВЫБРАНО · ${calc.count}</div>
+        <div class="summary-total">${money(calc.total)}</div>
+      </div>
+      <div class="summary-time">${hourText(calc.hours)}</div>
+    </div>
+    ${buttons}
+  `;
+
+  const add=document.getElementById('addExtras');
+  if(add) add.addEventListener('click',renderCustom);
+  document.getElementById('goBooking').addEventListener('click',renderBooking);
+}
+
+function renderCustom(){
+  showFlow();
+  setFlowStep('02 / 03');
+  const v=flowState.vehicle;
+  const included=includedSet();
+  const p=selectedPackage();
+
+  const garageCar=flowState.garageCarId ? GARAGE_CARS.find(c=>c.id===flowState.garageCarId) : null;
+  flowBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">${(garageCar?garageCar.name:VEHICLES[v].name).toUpperCase()}</div>
+      <h1 class="flow-title">${p?'ДОБАВИТЬ УСЛУГИ':'СОБРАТЬ СВОЮ'}</h1>
+      <p class="flow-lead">${p?`Основа — пакет ${p.name}. Добавьте только то, что действительно нужно.`:'Выберите любые услуги. Сумма и примерное время считаются автоматически.'}</p>
+
+      <div class="service-grid">
+        ${SERVICES.map(s=>{
+          const inc=included.has(s.id);
+          const sel=flowState.extras.has(s.id);
+          return `
+            <button class="service-card ${inc?'included':''} ${sel?'selected':''}" data-service="${s.id}" ${inc?'disabled':''}>
+              <span class="service-check">${inc?'':'✓'}</span>
+              <span class="service-name">${s.name}</span>
+              <span>
+                <span class="service-price">${money(s.prices[v])}</span>
+              </span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+
+      <button class="flow-back-link" id="backPackages">← К ГОТОВЫМ ПАКЕТАМ</button>
+      <div class="flow-note">Стоимость может измениться после осмотра автомобиля при сильном загрязнении или нестандартном состоянии.</div>
+    </div>
+  `;
+
+  flowBody.scrollTop=0;
+  flowBody.querySelectorAll('[data-service]:not(:disabled)').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const id=btn.dataset.service;
+      if(flowState.extras.has(id)) flowState.extras.delete(id);
+      else flowState.extras.add(id);
+      renderCustom();
+    });
+  });
+  document.getElementById('backPackages').addEventListener('click',renderPackages);
+  renderSelectionSummary(false);
+  setTimeout(()=>showFlowCoach('custom'),180);
+}
+
+const DOW=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+function dateItems(){
+  const base=new Date();
+  base.setHours(12,0,0,0);
+  const items=[];
+  for(let i=0;i<14;i++){
+    const d=new Date(base);
+    d.setDate(base.getDate()+i);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    items.push({i,date:d,key,full:fullBusy(i)});
+  }
+  return items;
+}
+function fullBusy(i){
+  return i===2 || i===8;
+}
+function busyBlocks(i){
+  if(fullBusy(i)) return [[10,21]];
+  const map={
+    0:[[16,18]],
+    1:[[12,14],[17,19]],
+    3:[[10,12],[15,17]],
+    4:[[13,16]],
+    5:[[11,13],[18,20]],
+    6:[[10,11],[14,16]],
+    7:[[12,15]],
+    9:[[10,13],[17,20]],
+    10:[[14,17]],
+    11:[[11,12],[16,18]],
+    12:[[10,12],[19,21]],
+    13:[[13,15]]
+  };
+  return map[i]||[];
+}
+function reserveHours(){
+  return Math.max(1,Math.ceil(calcSelection().hours));
+}
+function canStart(index,start){
+  const duration=reserveHours();
+  const end=start+duration;
+  if(end>21) return false;
+  return !busyBlocks(index).some(([a,b])=>start<b && end>a);
+}
+function formatLongDate(key){
+  const d=new Date(key+'T12:00:00');
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+function renderBooking(){
+  const calc=calcSelection();
+  if(!flowState.vehicle || calc.count===0) return;
+
+  showFlow();
+  setFlowStep('03 / 03');
+  flowSummary.classList.add('hidden');
+
+  const dates=dateItems();
+  flowBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">ВАШ ЗАКАЗ</div>
+      <h1 class="flow-title">ВЫБЕРИТЕ ДАТУ</h1>
+      <p class="flow-lead">Мы учитываем длительность выбранных работ и показываем только те окна, куда автомобиль реально помещается.</p>
+
+      <div class="order-card">
+        ${calc.rows.map(r=>`<div class="order-row"><span>${r.name}</span><span>${money(r.price)}</span></div>`).join('')}
+      </div>
+      <div class="order-total">
+        <strong>${money(calc.total)}</strong>
+        <span>${hourText(calc.hours)}</span>
+      </div>
+
+      <div class="flow-section">
+        <div class="flow-section-title">ДАТА</div>
+        <div class="date-strip" id="dateStrip">
+          ${dates.map(x=>`
+            <button class="date-card ${x.full?'busy':''} ${flowState.dateKey===x.key?'selected':''}"
+              data-date="${x.key}" data-date-index="${x.i}" ${x.full?'disabled':''}>
+              <span class="dow">${DOW[x.date.getDay()]}</span>
+              <span class="day">${x.date.getDate()}</span>
+              <span class="date-state">${x.full?'ЗАНЯТО':'СВОБОДНО'}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div id="timeArea"></div>
+
+      <div class="address-card">
+        <div class="flow-section-title">АДРЕС</div>
+        <div class="address-name">T-CITY | ESTETIC AUTO</div>
+        <div class="address-text">г. Тюмень<br>ул. Василия Шамова, 8</div>
+      </div>
+
+      <button class="flow-back-link" id="backServices">← ВЕРНУТЬСЯ К УСЛУГАМ</button>
+    </div>
+  `;
+  flowBody.scrollTop=0;
+
+  document.querySelectorAll('[data-date]:not(:disabled)').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      flowState.dateKey=btn.dataset.date;
+      flowState.dateIndex=Number(btn.dataset.dateIndex);
+      flowState.time=null;
+      renderBooking();
+      setTimeout(()=>{
+        const area=document.getElementById('timeArea');
+        if(area) area.scrollIntoView({behavior:'smooth',block:'center'});
+      },70);
+    });
+  });
+
+  document.getElementById('backServices').addEventListener('click',()=>{
+    flowState.dateKey=null;
+    flowState.time=null;
+    if(flowState.packageId || flowState.extras.size) renderCustom();
+    else renderPackages();
+  });
+
+  renderTimeArea();
+}
+
+function renderTimeArea(){
+  const area=document.getElementById('timeArea');
+  if(!area || !flowState.dateKey) return;
+
+  const starts=[];
+  for(let h=10;h<21;h++) starts.push(h);
+
+  area.innerHTML=`
+    <div class="flow-section">
+      <div class="flow-section-title">ВРЕМЯ · ${formatLongDate(flowState.dateKey).toUpperCase()}</div>
+      <div class="time-grid">
+        ${starts.map(h=>{
+          const ok=canStart(flowState.dateIndex,h);
+          const selected=flowState.time===h;
+          return `<button class="time-slot ${selected?'selected':''}" data-time="${h}" ${ok?'':'disabled'}>${String(h).padStart(2,'0')}:00</button>`;
+        }).join('')}
+      </div>
+      <div class="booking-legend">
+        <span><i></i> доступно</span>
+        <span class="off"><i></i> занято / не помещается</span>
+      </div>
+    </div>
+  `;
+
+  area.querySelectorAll('[data-time]:not(:disabled)').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      flowState.time=Number(btn.dataset.time);
+      renderTimeArea();
+      renderBookingAction();
+    });
+  });
+
+  renderBookingAction();
+}
+
+function renderBookingAction(){
+  let holder=document.getElementById('bookingAction');
+  if(holder) holder.remove();
+  if(flowState.time===null) return;
+
+  const wrap=document.createElement('div');
+  wrap.id='bookingAction';
+  wrap.className='flow-section';
+  wrap.innerHTML=`
+    <button class="flow-btn primary" id="confirmBooking" style="width:100%;min-height:48px">ЗАПИСАТЬСЯ</button>
+  `;
+  const area=document.getElementById('timeArea');
+  area.appendChild(wrap);
+  document.getElementById('confirmBooking').addEventListener('click',saveBooking);
+}
+
+function bookingSnapshot(){
+  const calc=calcSelection();
+  return {
+    vehicle:flowState.vehicle,
+    garageCarId:flowState.garageCarId,
+    vehicleName:flowState.garageCarId ? (GARAGE_CARS.find(c=>c.id===flowState.garageCarId)?.name || VEHICLES[flowState.vehicle].name) : VEHICLES[flowState.vehicle].name,
+    packageId:flowState.packageId,
+    extras:[...flowState.extras],
+    dateKey:flowState.dateKey,
+    time:flowState.time,
+    total:calc.total,
+    hours:reserveHours(),
+    rows:calc.rows,
+    address:'г. Тюмень, ул. Василия Шамова, 8'
+  };
+}
+function saveBooking(){
+  const b=bookingSnapshot();
+  storageSet('tcity_current_booking',JSON.stringify(b));
+  updateBookingMenu();
+  renderSuccess(b);
+}
+function getCurrentBooking(){
+  const raw=storageGet('tcity_current_booking');
+  if(!raw) return null;
+  try{return JSON.parse(raw)}catch(_){return null}
+}
+function updateBookingMenu(){
+  const b=getCurrentBooking();
+  const label=document.querySelector('.menu button[data-page="booking"] .label');
+  if(label) label.textContent=b?'Моя запись':'Запись';
+}
+
+function detailRows(b){
+  return `
+    <div class="confirm-details">
+      ${b.rows.map(r=>`<div class="order-row"><span>${r.name}</span><span>${money(r.price)}</span></div>`).join('')}
+      <div class="order-row"><span>Автомобиль</span><span>${b.vehicleName}</span></div>
+      <div class="order-row"><span>Дата</span><span>${formatLongDate(b.dateKey)}</span></div>
+      <div class="order-row"><span>Время</span><span>${String(b.time).padStart(2,'0')}:00</span></div>
+      <div class="order-row"><span>Ориентировочное время</span><span>${hourText(b.hours)}</span></div>
+      <div class="order-row"><span>Предварительная стоимость</span><span>${money(b.total)}</span></div>
+    </div>
+    <div class="address-card" style="text-align:left">
+      <div class="flow-section-title">АДРЕС</div>
+      <div class="address-name">T-CITY | ESTETIC AUTO</div>
+      <div class="address-text">г. Тюмень<br>ул. Василия Шамова, 8</div>
+    </div>
+  `;
+}
+function renderSuccess(b){
+  showFlow();
+  setFlowStep('ГОТОВО');
+  flowSummary.classList.add('hidden');
+  flowBody.innerHTML=`
+    <div class="confirm-box flow-enter">
+      <div style="width:100%">
+        <div class="confirm-mark">✓</div>
+        <div class="confirm-title">ВЫ ЗАПИСАНЫ</div>
+        <div class="confirm-sub">Всё готово.<br>До скорой встречи в T-CITY.</div>
+        ${detailRows(b)}
+        <div class="confirm-actions">
+          <button class="flow-btn primary" id="successHome">ГЛАВНОЕ МЕНЮ</button>
+          <button class="flow-btn" id="successBooking">МОЯ ЗАПИСЬ</button>
+        </div>
+      </div>
+    </div>
+  `;
+  flowBody.scrollTop=0;
+  document.getElementById('successHome').addEventListener('click',()=>{
+    closeFlow();
+    showBookingToast();
+  });
+  document.getElementById('successBooking').addEventListener('click',()=>renderCurrentBooking(b));
+}
+function preliminaryBookingCard(){
+  return `
+    <div class="preliminary-card">
+      <div class="preliminary-title">ПРЕДВАРИТЕЛЬНАЯ ЗАПИСЬ</div>
+      <div class="preliminary-copy">
+        Выбранные услуги и стоимость помогают заранее сориентировать вас по цене и зарезервировать необходимое время в графике.
+        Окончательный объём работ можно изменить после осмотра автомобиля.
+      </div>
+      <span class="preliminary-strong">
+        Если какая-либо услуга вам не нужна — мы обязательно скажем об этом. Мы не навязываем лишние услуги и окончательный список согласуем с вами перед началом работы.
+      </span>
+    </div>
+  `;
+}
+
+function renderCurrentBooking(b=getCurrentBooking()){
+  if(!b){
+    renderVehicle('booking');
+    return;
+  }
+  showFlow();
+  setFlowStep('МОЯ ЗАПИСЬ');
+  flowSummary.classList.add('hidden');
+  flowBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">T-CITY | ESTETIC AUTO</div>
+      <h1 class="flow-title">МОЯ ЗАПИСЬ</h1>
+      <div class="current-badge">ЗАПИСЬ ПОДТВЕРЖДЕНА</div>
+      ${detailRows(b)}
+      ${preliminaryBookingCard()}
+      <div class="confirm-actions">
+        <button class="flow-btn primary" id="currentHome">ГЛАВНОЕ МЕНЮ</button>
+        <button class="flow-btn" id="currentChange">ИЗМЕНИТЬ ЗАПИСЬ</button>
+        <button class="flow-btn" id="currentCancel">ОТМЕНИТЬ ЗАПИСЬ</button>
+      </div>
+    </div>
+  `;
+  flowBody.scrollTop=0;
+  document.getElementById('currentHome').addEventListener('click',closeFlow);
+  document.getElementById('currentChange').addEventListener('click',()=>{
+    if(b.garageCarId && GARAGE_CARS.some(c=>c.id===b.garageCarId)) startGarageBooking(b.garageCarId);
+    else renderVehicle('booking');
+  });
+  document.getElementById('currentCancel').addEventListener('click',openCancelBookingSheet);
+}
+
+function openCancelBookingSheet(){
+  sheetTitle.textContent='Отменить запись?';
+  sheetText.innerHTML=`
+    <div class="sheet-copy">Дата и время будут освобождены. Это действие можно подтвердить или оставить запись без изменений.</div>
+    <div class="sheet-row">
+      <button class="flow-btn" id="keepBooking">ОСТАВИТЬ</button>
+      <button class="flow-btn sheet-danger" id="confirmCancelBooking">ОТМЕНИТЬ</button>
+    </div>
+  `;
+  shade.classList.remove('hidden');
+  document.getElementById('keepBooking').addEventListener('click',closeSheet);
+  document.getElementById('confirmCancelBooking').addEventListener('click',()=>{
+    storageRemove('tcity_current_booking');
+    closeSheet();
+    updateBookingMenu();
+    renderCancelledBooking();
+  });
+}
+
+function renderCancelledBooking(){
+  showFlow();
+  setFlowStep('ГОТОВО');
+  flowSummary.classList.add('hidden');
+  flowBody.innerHTML=`
+    <div class="confirm-box flow-enter">
+      <div style="width:100%">
+        <div class="cancelled-mark">×</div>
+        <div class="confirm-title">ЗАПИСЬ ОТМЕНЕНА</div>
+        <div class="confirm-sub">Дата и время снова свободны.<br>Будем рады видеть вас в T-CITY в другой день.</div>
+        <div class="confirm-actions">
+          <button class="flow-btn primary" id="cancelledHome">ГЛАВНОЕ МЕНЮ</button>
+          <button class="flow-btn" id="cancelledNew">ЗАПИСАТЬСЯ СНОВА</button>
+        </div>
+      </div>
+    </div>
+  `;
+  flowBody.scrollTop=0;
+  document.getElementById('cancelledHome').addEventListener('click',closeFlow);
+  document.getElementById('cancelledNew').addEventListener('click',()=>renderVehicle('booking'));
+}
+
+
+/* =========================================================
+   WAVE 04.0 — GARAGE
+   ========================================================= */
+const GARAGE_CARS=[
+  {
+    id:'passat',brand:'VOLKSWAGEN',name:'Volkswagen Passat B5',plate:'А073СН172',type:'sedan',shape:'sedan',
+    image:'garage-passat.png',
+    info:{'Пробег':'248 600 км','Госномер':'А073СН172','Цвет':'Серебристый','Год выпуска':'2003','VIN':'WVWZZZ3BZ3E000000'},
+    visits:[
+      {date:'14 августа 2026',services:'CARE · антидождь · чернение пластика',price:3700},
+      {date:'2 июля 2026',services:'Ручная мойка · очистка дисков · кварц',price:2100},
+      {date:'18 мая 2026',services:'Мойка · химическая очистка кузова · битум',price:2600}
+    ]
+  },
+  {
+    id:'lada2112',brand:'LADA',name:'LADA 2112',plate:'В620ОК172',type:'sedan',shape:'hatch',
+    image:'garage-lada-2112.png',
+    info:{'Пробег':'189 400 км','Госномер':'В620ОК172','Цвет':'Чёрный','Год выпуска':'2007','VIN':'XTA21120070000000'},
+    visits:[
+      {date:'9 августа 2026',services:'BASE · пылесос салона · чернение резины',price:1500},
+      {date:'21 июня 2026',services:'Ручная мойка · антидождь',price:2500}
+    ]
+  },
+  {
+    id:'cls',brand:'MERCEDES-BENZ',name:'Mercedes-Benz CLS',plate:'В500ОР72',type:'sedan',shape:'coupe',
+    image:'garage-mercedes-cls.png',
+    info:{'Пробег':'132 500 км','Госномер':'В500ОР72','Цвет':'Чёрный','Год выпуска':'2015','VIN':'WDD2180001A000000'},
+    visits:[
+      {date:'17 августа 2026',services:'DETAIL · антидождь · кварц',price:5200},
+      {date:'29 июня 2026',services:'Мойка · кондиционер кожи · стёкла',price:2300}
+    ]
+  },
+  {
+    id:'polo',brand:'VOLKSWAGEN',name:'Volkswagen Polo Coupe',plate:'У409МО72',type:'sedan',shape:'coupe-short',
+    image:'garage-polo.png',
+    info:{'Пробег':'164 200 км','Госномер':'У409МО72','Цвет':'Белый','Год выпуска':'1992','VIN':'WVWZZZ80ZNY000000'},
+    visits:[
+      {date:'5 августа 2026',services:'CARE · очистка битума',price:2200},
+      {date:'11 июля 2026',services:'BASE · антидождь',price:2500}
+    ]
+  }
+];
+
+let garageView='list';
+let selectedGarageCarId=null;
+let garageCoachKey=null;
+
+function garageCarSvg(car,small=false){
+  const cls=small?'garage-car-img garage-car-img-small':'garage-car-img garage-car-img-large';
+  return `<img class="${cls}" src="${car.image}" alt="${car.name}" draggable="false">`;
+}
+
+function showGarageCoach(kind){
+  if(kind==='garage'){
+    if(storageGet('tcity_garage_tip_seen')) return;
+    garageCoachKey='tcity_garage_tip_seen';
+    garageCoachTitle.textContent='Ваш гараж';
+    garageCoachText.textContent='После первого посещения здесь появится ваш автомобиль. Если машин несколько, при следующей записи достаточно выбрать нужную — данные уже будут сохранены, поэтому запись займёт меньше времени. Здесь хранится информация об автомобиле, история посещений, услуги и суммы, ваши предпочтения и профиль клиента. Всё в одном месте — для более простых и удобных следующих визитов.';
+  }else if(kind==='preferences'){
+    if(storageGet('tcity_preferences_tip_seen')) return;
+    garageCoachKey='tcity_preferences_tip_seen';
+    garageCoachTitle.textContent='Ваши предпочтения';
+    garageCoachText.textContent='Здесь можно написать любые пожелания: какой напиток вы хотите, какой аромат нравится в автомобиле или что ещё важно именно вам. Готового списка нет — пишите своими словами. Мы сохраним это для следующих посещений.';
+  }
+  garageCoach.classList.remove('hidden');
+}
+garageCoachOk.addEventListener('click',()=>{
+  if(garageCoachKey) storageSet(garageCoachKey,'1');
+  garageCoach.classList.add('hidden');
+});
+
+function showGarage(){
+  history.classList.add('hidden');
+  flow.classList.add('hidden');
+  aux.classList.add('hidden');
+  page.classList.add('hidden');
+  home.classList.add('hidden');
+  garage.classList.remove('hidden');
+}
+function closeGarage(){
+  garage.classList.add('hidden');
+  home.classList.remove('hidden');
+}
+function setGarageBack(mode){garageView=mode}
+
+function showGarageList(){
+  showGarage();
+  selectedGarageCarId=null;
+  setGarageBack('list');
+  garageBrand.textContent='ГАРАЖ';
+  garageProfileBtn.classList.remove('hidden');
+  garageBody.innerHTML=`
+    <div class="garage-enter">
+      <div class="garage-kicker">T-CITY | ESTETIC AUTO</div>
+      <h1 class="garage-title">ВАШИ АВТОМОБИЛИ</h1>
+      <p class="garage-lead">Выберите автомобиль, чтобы открыть его данные, историю посещений и предпочтения.</p>
+      <div class="garage-list">
+        ${GARAGE_CARS.map(car=>`
+          <button class="garage-card" data-garage-car="${car.id}">
+            <span class="garage-thumb">${garageCarSvg(car,true)}</span>
+            <span>
+              <span class="garage-card-brand">${car.brand}</span>
+              <span class="garage-card-name">${car.name}</span>
+              <span class="garage-card-meta">${car.plate} · ${car.visits.length} посещения</span>
+            </span>
+            <span class="garage-card-arrow">→</span>
+          </button>`).join('')}
+      </div>
+      <div class="garage-list-note">Автомобили показаны в едином фирменном стиле T-CITY Garage.</div>
+    </div>`;
+  garageBody.scrollTop=0;
+  garageBody.querySelectorAll('[data-garage-car]').forEach(btn=>btn.addEventListener('click',()=>showGarageCar(btn.dataset.garageCar)));
+  setTimeout(()=>showGarageCoach('garage'),170);
+}
+
+function showGarageCar(id){
+  const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
+  showGarage();
+  selectedGarageCarId=id;
+  setGarageBack('car');
+  garageBrand.textContent='ГАРАЖ';
+  garageProfileBtn.classList.remove('hidden');
+  garageBody.innerHTML=`
+    <div class="garage-enter">
+      <div class="garage-car-head">
+        <div>
+          <div class="garage-card-brand">${car.brand}</div>
+          <div class="garage-car-name">${car.name}</div>
+          <div class="garage-car-plate">${car.plate}</div>
+        </div>
+      </div>
+      <div class="garage-hero">
+        <div class="garage-hero-label">T-CITY · DETAILING BOX</div>
+        <div class="garage-bay-lines"><i></i><i></i></div>
+        <div class="garage-hero-car">${garageCarSvg(car,false)}</div>
+      </div>
+      <div class="garage-grid-actions">
+        <button class="garage-nav-card" data-garage-view="history"><span><strong>История посещений</strong><span>${car.visits.length} визита · услуги и суммы</span></span><span class="garage-nav-arrow">→</span></button>
+        <button class="garage-nav-card" data-garage-view="info"><span><strong>Информация об авто</strong><span>Пробег · госномер · цвет · год · VIN</span></span><span class="garage-nav-arrow">→</span></button>
+        <button class="garage-nav-card" data-garage-view="preferences"><span><strong>Ваши предпочтения</strong><span>Напиток · аромат · любые пожелания</span></span><span class="garage-nav-arrow">→</span></button>
+      </div>
+      <button class="garage-book" id="garageBookBtn">ЗАПИСАТЬ ЭТОТ АВТОМОБИЛЬ</button>
+    </div>`;
+  garageBody.scrollTop=0;
+  garageBody.querySelector('[data-garage-view="history"]').addEventListener('click',()=>showGarageHistory(id));
+  garageBody.querySelector('[data-garage-view="info"]').addEventListener('click',()=>showGarageInfo(id));
+  garageBody.querySelector('[data-garage-view="preferences"]').addEventListener('click',()=>showGaragePreferences(id));
+  document.getElementById('garageBookBtn').addEventListener('click',()=>startGarageBooking(id));
+}
+
+function showGarageHistory(id){
+  const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
+  showGarage();selectedGarageCarId=id;setGarageBack('history');garageBrand.textContent='ИСТОРИЯ';
+  garageBody.innerHTML=`<div class="garage-enter">
+    <div class="garage-kicker">${car.name.toUpperCase()}</div>
+    <h1 class="garage-title">ИСТОРИЯ ПОСЕЩЕНИЙ</h1>
+    <p class="garage-lead">Здесь сохраняются визиты, выполненные услуги и сумма каждого посещения.</p>
+    <div class="garage-section">${car.visits.map(v=>`<article class="visit-card"><div class="visit-date">${v.date.toUpperCase()}</div><div class="visit-services">${v.services}</div><div class="visit-price">${money(v.price)}</div></article>`).join('')}</div>
+  </div>`;
+  garageBody.scrollTop=0;
+}
+
+function showGarageInfo(id){
+  const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
+  showGarage();selectedGarageCarId=id;setGarageBack('info');garageBrand.textContent='АВТОМОБИЛЬ';
+  garageBody.innerHTML=`<div class="garage-enter">
+    <div class="garage-kicker">${car.name.toUpperCase()}</div>
+    <h1 class="garage-title">ИНФОРМАЦИЯ ОБ АВТО</h1>
+    <div class="garage-section">${Object.entries(car.info).map(([k,v])=>`<div class="garage-row"><span>${k}</span><span>${v}</span></div>`).join('')}</div>
+  </div>`;
+  garageBody.scrollTop=0;
+}
+
+function getGaragePreferences(id){
+  const key=`tcity_garage_preferences_${id}`;
+  const raw=storageGet(key);
+  if(raw){try{return JSON.parse(raw)}catch(_){}}
+  return {drink:'Кола без сахара',scent:'Свежий, не сладкий',wish:'Написать за 20 минут до готовности',custom:[]};
+}
+function saveGaragePreferencesData(id,data){storageSet(`tcity_garage_preferences_${id}`,JSON.stringify(data))}
+
+function showGaragePreferences(id){
+  const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
+  showGarage();selectedGarageCarId=id;setGarageBack('preferences');garageBrand.textContent='ПРЕДПОЧТЕНИЯ';
+  const p=getGaragePreferences(id);
+  garageBody.innerHTML=`<div class="garage-enter">
+    <div class="garage-kicker">${car.name.toUpperCase()}</div>
+    <h1 class="garage-title">ВАШИ ПРЕДПОЧТЕНИЯ</h1>
+    <p class="pref-copy">Пишите так, как удобно вам. Никаких готовых вариантов — все поля свободные и редактируемые.</p>
+
+    <label class="pref-field"><span class="pref-label">НАПИТОК</span><input class="pref-input" id="prefDrink" value="${escapeHtml(p.drink||'')}" placeholder="Например: кола без сахара"></label>
+    <label class="pref-field"><span class="pref-label">АРОМАТ</span><input class="pref-input" id="prefScent" value="${escapeHtml(p.scent||'')}" placeholder="Например: свежий, не сладкий"></label>
+    <label class="pref-field"><span class="pref-label">ПОЖЕЛАНИЕ</span><input class="pref-input" id="prefWish" value="${escapeHtml(p.wish||'')}" placeholder="Напишите любое пожелание"></label>
+
+    <div class="pref-custom-block">
+      <div class="garage-section-title">ДРУГИЕ ПРЕДПОЧТЕНИЯ</div>
+      <div id="prefCustomList">${renderCustomPrefs(p.custom||[])}</div>
+      <div class="pref-custom-new">
+        <input class="pref-custom-name" id="prefNewName" placeholder="Название — например: Связь">
+        <input class="pref-custom-value" id="prefNewValue" placeholder="Что именно вам удобно">
+      </div>
+      <button class="pref-add" id="prefAddBtn">+ ДОБАВИТЬ ПРЕДПОЧТЕНИЕ</button>
+    </div>
+    <button class="pref-save" id="prefSaveBtn">СОХРАНИТЬ</button>
+    <div class="pref-status" id="prefStatus"></div>
+  </div>`;
+  garageBody.scrollTop=0;
+  bindPreferenceActions(id);
+  setTimeout(()=>showGarageCoach('preferences'),170);
+}
+function renderCustomPrefs(items){
+  if(!items.length) return '<div class="garage-list-note">Пока дополнительных предпочтений нет.</div>';
+  return items.map((x,i)=>`<div class="pref-custom-item" data-pref-index="${i}"><div class="pref-custom-top"><div class="pref-custom-title">${escapeHtml(x.name)}</div><button class="pref-delete" data-pref-delete="${i}" aria-label="Удалить">×</button></div><input class="pref-custom-value" data-pref-value="${i}" value="${escapeHtml(x.value||'')}"></div>`).join('');
+}
+function collectPreferenceBase(id){
+  const old=getGaragePreferences(id);
+  const custom=(old.custom||[]).map((x,i)=>({name:x.name,value:(document.querySelector(`[data-pref-value="${i}"]`)?.value||x.value||'').trim()}));
+  return {drink:(document.getElementById('prefDrink')?.value||'').trim(),scent:(document.getElementById('prefScent')?.value||'').trim(),wish:(document.getElementById('prefWish')?.value||'').trim(),custom};
+}
+function bindPreferenceActions(id){
+  document.getElementById('prefSaveBtn').addEventListener('click',()=>{
+    const data=collectPreferenceBase(id);saveGaragePreferencesData(id,data);
+    const s=document.getElementById('prefStatus');s.textContent='Сохранено для следующих посещений.';setTimeout(()=>{if(s)s.textContent=''},2200);
+  });
+  document.getElementById('prefAddBtn').addEventListener('click',()=>{
+    const name=document.getElementById('prefNewName').value.trim();
+    const value=document.getElementById('prefNewValue').value.trim();
+    if(!name || !value){document.getElementById('prefStatus').textContent='Заполните название и пожелание.';return}
+    const data=collectPreferenceBase(id);data.custom.push({name,value});saveGaragePreferencesData(id,data);showGaragePreferences(id);
+  });
+  document.querySelectorAll('[data-pref-delete]').forEach(btn=>btn.addEventListener('click',()=>{
+    const idx=Number(btn.dataset.prefDelete);const data=collectPreferenceBase(id);data.custom.splice(idx,1);saveGaragePreferencesData(id,data);showGaragePreferences(id);
+  }));
+}
+
+function showClientProfile(){
+  showGarage();setGarageBack('profile');garageBrand.textContent='ПРОФИЛЬ';garageProfileBtn.classList.add('hidden');
+  garageBody.innerHTML=`<div class="garage-enter">
+    <div class="garage-kicker">T-CITY | CLIENT</div>
+    <h1 class="garage-title">ПРОФИЛЬ КЛИЕНТА</h1>
+    <div class="profile-card">
+      <div class="profile-mark"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.2" r="3.1" stroke="currentColor" stroke-width="1.35"/><path d="M5.5 19c.65-4 3-6 6.5-6s5.85 2 6.5 6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg></div>
+      <div class="profile-name">Клиент T-CITY</div>
+      <div class="profile-phone">+7 900 000-00-00</div>
+      <div class="garage-section">
+        <div class="garage-row"><span>Автомобилей в гараже</span><span>${GARAGE_CARS.length}</span></div>
+        <div class="garage-row"><span>Профиль</span><span>Создан T-CITY</span></div>
+      </div>
+      <div class="profile-note">В реальной версии профиль создаётся T-CITY после первого посещения. Здесь пока используются тестовые данные для проверки интерфейса.</div>
+    </div>
+  </div>`;garageBody.scrollTop=0;
+}
+
+garageProfileBtn.addEventListener('click',showClientProfile);
+garageBackBtn.addEventListener('click',()=>{
+  if(garageView==='list'){closeGarage();return}
+  if(garageView==='profile'){if(selectedGarageCarId) showGarageCar(selectedGarageCarId); else showGarageList();return}
+  if(['history','info','preferences'].includes(garageView)){showGarageCar(selectedGarageCarId);return}
+  if(garageView==='car'){showGarageList();return}
+  showGarageList();
+});
+
+function startGarageBooking(id){
+  const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
+  flowState.entry='garage';
+  flowState.vehicle=car.type;
+  flowState.garageCarId=car.id;
+  flowState.packageId=null;
+  flowState.extras=new Set();
+  flowState.dateKey=null;flowState.dateIndex=null;flowState.time=null;
+  renderPackages();
+}
+
+let toastTimer=null;
+function showBookingToast(){
+  clearTimeout(toastTimer);
+  homeToast.classList.remove('hidden');
+  toastTimer=setTimeout(()=>homeToast.classList.add('hidden'),4200);
+}
+
+document.querySelectorAll('.menu button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const target=btn.dataset.page;
+    if(target==='history'){
+      openHistory();
+      return;
+    }
+    if(target==='services'){
+      renderVehicle('services');
+      return;
+    }
+    if(target==='booking'){
+      const b=getCurrentBooking();
+      if(b) renderCurrentBooking(b);
+      else renderVehicle('booking');
+      return;
+    }
+
+    if(target==='garage'){
+      showGarageList();
+      return;
+    }
+  });
+});
+document.querySelector('.back').addEventListener('click',()=>{
+  page.classList.add('hidden');
+  home.classList.remove('hidden');
+});
+
+updateBookingMenu();
+
+
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
+const DEFAULT_NOTIFICATIONS=[
+  {
+    id:'sale-clean',
+    type:'АКЦИЯ',
+    title:'−20% на химчистку салона',
+    preview:'Специальная цена до 30 сентября.',
+    read:false,
+    kind:'sale'
+  },
+  {
+    id:'rating-today',
+    type:'ОЦЕНИТЕ ВИЗИТ',
+    title:'Как всё прошло сегодня?',
+    preview:'Оставьте оценку и расскажите, что можно улучшить.',
+    read:false,
+    kind:'rating'
+  },
+  {
+    id:'referral',
+    type:'БОНУС',
+    title:'2 из 5 друзей уже с вами',
+    preview:'Ещё 3 рекомендации — и полировка фар в подарок.',
+    read:false,
+    kind:'referral'
+  },
+  {
+    id:'care-reminder',
+    type:'ВАШ АВТОМОБИЛЬ',
+    title:'Пора проверить защиту кузова',
+    preview:'После защитной обработки прошло достаточно времени.',
+    read:true,
+    kind:'care'
+  },
+  {
+    id:'personal-bonus',
+    type:'БОНУС',
+    title:'Персональное предложение',
+    preview:'Скидка 15% на антидождь до воскресенья.',
+    read:true,
+    kind:'bonus'
+  },
+  {
+    id:'new-service',
+    type:'T-CITY',
+    title:'Новая услуга',
+    preview:'В T-CITY появился детейлинг моторного отсека.',
+    read:false,
+    kind:'news'
+  }
+];
+
+function getNotifications(){
+  const raw=storageGet('tcity_notifications');
+  if(raw){
+    try{
+      const parsed=JSON.parse(raw);
+      if(Array.isArray(parsed)) return parsed;
+    }catch(_){}
+  }
+  storageSet('tcity_notifications',JSON.stringify(DEFAULT_NOTIFICATIONS));
+  return JSON.parse(JSON.stringify(DEFAULT_NOTIFICATIONS));
+}
+function saveNotifications(items){
+  storageSet('tcity_notifications',JSON.stringify(items));
+  syncNotificationDot();
+}
+function syncNotificationDot(){
+  const hasUnread=getNotifications().some(n=>!n.read);
+  notifyBtn.classList.toggle('unread',hasUnread);
+}
+function markNotificationRead(id){
+  const items=getNotifications();
+  const n=items.find(x=>x.id===id);
+  if(n && !n.read){
+    n.read=true;
+    saveNotifications(items);
+  }else{
+    syncNotificationDot();
+  }
+}
+
+let auxMode='home';
+let currentNoticeId=null;
+
+function showAux(){
+  history.classList.add('hidden');
+  page.classList.add('hidden');
+  flow.classList.add('hidden');
+  home.classList.add('hidden');
+  aux.classList.remove('hidden');
+}
+function closeAuxToHome(){
+  auxBody.classList.remove('chat-mode');
+  aux.classList.add('hidden');
+  home.classList.remove('hidden');
+}
+function renderNotifications(){
+  showAux();
+  auxBody.classList.remove('chat-mode');
+  auxMode='notifications';
+  currentNoticeId=null;
+  auxTitle.textContent='УВЕДОМЛЕНИЯ';
+  const items=getNotifications();
+  const unread=items.filter(n=>!n.read).length;
+  auxSide.textContent=unread?`${unread} НОВЫХ`:'';
+
+  auxBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">T-CITY</div>
+      <h1 class="flow-title">УВЕДОМЛЕНИЯ</h1>
+      <p class="flow-lead">Акции, бонусы, рекомендации по уходу и важные новости для вас.</p>
+      <div class="notice-list">
+        ${items.map(n=>`
+          <button class="notice-item ${n.read?'read':''}" data-notice="${n.id}">
+            <span>
+              <span class="notice-tag">${n.type}</span>
+              <span class="notice-name">${n.title}</span>
+              <span class="notice-preview">${n.preview}</span>
+            </span>
+            <span class="notice-arrow">→</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  auxBody.scrollTop=0;
+  auxBody.querySelectorAll('[data-notice]').forEach(btn=>{
+    btn.addEventListener('click',()=>renderNotificationDetail(btn.dataset.notice));
+  });
+}
+
+function personIcon(done){
+  return `
+    <svg class="person-svg ${done?'done':'pending'}" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="8.5" r="4.3" ${done?'fill="currentColor"':'fill="none" stroke="currentColor" stroke-width="1.5"'}/>
+      <path d="M8.5 26.5v-6.2c0-4.15 3.35-7.5 7.5-7.5s7.5 3.35 7.5 7.5v6.2Z"
+        ${done?'fill="currentColor"':'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"'}/>
+    </svg>
+  `;
+}
+
+function noticeDetailContent(n){
+  if(n.kind==='sale'){
+    return `
+      <div class="notice-detail-copy">До 30 сентября действует специальное предложение на полную химчистку салона.</div>
+      <div class="notice-accent">−20% НА ХИМЧИСТКУ САЛОНА</div>
+      <div class="notice-detail-copy">Итоговая стоимость зависит от типа кузова и состояния салона. Перед началом работы всё согласуем.</div>
+    `;
+  }
+  if(n.kind==='rating'){
+    const saved=storageGet('tcity_last_feedback');
+    if(saved){
+      return `
+        <div class="notice-detail-copy">Спасибо. Ваша обратная связь сохранена.</div>
+        <div class="feedback-thanks">Мы читаем каждую оценку и используем её, чтобы улучшать сервис T-CITY.</div>
+      `;
+    }
+    return `
+      <div class="notice-detail-copy">Расскажите, что понравилось и что мы можем улучшить. Мы читаем каждую обратную связь и учитываем её в работе.</div>
+      <div class="stars" id="ratingStars">
+        ${[1,2,3,4,5].map(i=>`<button class="star-btn" data-star="${i}" aria-label="${i} звезд">★</button>`).join('')}
+      </div>
+      <label class="feedback-label" for="feedbackText">КОММЕНТАРИЙ</label>
+      <textarea class="feedback-input" id="feedbackText" placeholder="Что понравилось? Что можно сделать лучше?"></textarea>
+      <button class="feedback-send" id="feedbackSend">ОТПРАВИТЬ</button>
+    `;
+  }
+  if(n.kind==='referral'){
+    return `
+      <div class="notice-detail-copy">По вашей рекомендации уже приехали 2 человека из 5.</div>
+      <div class="people-progress">
+        ${personIcon(true)}${personIcon(true)}${personIcon(false)}${personIcon(false)}${personIcon(false)}
+      </div>
+      <div class="progress-copy">Приведите ещё 3 друзей — и получите полировку фар в подарок.</div>
+      <div class="notice-accent">2 / 5</div>
+    `;
+  }
+  if(n.kind==='care'){
+    return `
+      <div class="notice-detail-copy">После последней защитной обработки прошло достаточно времени, чтобы проверить состояние покрытия.</div>
+      <div class="notice-accent">ПРОВЕРИТЬ ЗАЩИТУ КУЗОВА</div>
+      <div class="notice-detail-copy">Это не обязательная услуга. Сначала оценим состояние покрытия и скажем, действительно ли его нужно обновлять.</div>
+    `;
+  }
+  if(n.kind==='bonus'){
+    return `
+      <div class="notice-detail-copy">Для вашего автомобиля доступно персональное предложение.</div>
+      <div class="notice-accent">−15% НА АНТИДОЖДЬ</div>
+      <div class="notice-detail-copy">Предложение действует до воскресенья.</div>
+    `;
+  }
+  return `
+    <div class="notice-detail-copy">В список услуг T-CITY добавлен детейлинг моторного отсека.</div>
+    <div class="notice-accent">ДЕТЕЙЛИНГ МОТОРНОГО ОТСЕКА</div>
+    <div class="notice-detail-copy">Если хотите узнать, подходит ли услуга вашему автомобилю, задайте вопрос в поддержке.</div>
+  `;
+}
+
+let ratingValue=0;
+function renderNotificationDetail(id){
+  auxBody.classList.remove('chat-mode');
+  const n=getNotifications().find(x=>x.id===id);
+  if(!n) return renderNotifications();
+
+  markNotificationRead(id);
+  showAux();
+  auxMode='notice-detail';
+  currentNoticeId=id;
+  auxTitle.textContent='УВЕДОМЛЕНИЕ';
+  auxSide.textContent='';
+  ratingValue=0;
+
+  auxBody.innerHTML=`
+    <div class="notice-detail flow-enter">
+      <div class="notice-detail-tag">${n.type}</div>
+      <div class="notice-detail-title">${n.title}</div>
+      ${noticeDetailContent(n)}
+    </div>
+  `;
+  auxBody.scrollTop=0;
+
+  if(n.kind==='rating' && !storageGet('tcity_last_feedback')){
+    const stars=[...auxBody.querySelectorAll('[data-star]')];
+    stars.forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        ratingValue=Number(btn.dataset.star);
+        stars.forEach(s=>s.classList.toggle('active',Number(s.dataset.star)<=ratingValue));
+      });
+    });
+    const send=document.getElementById('feedbackSend');
+    if(send){
+      send.addEventListener('click',()=>{
+        if(!ratingValue){
+          const starsBox=document.getElementById('ratingStars');
+          starsBox.animate(
+            [{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],
+            {duration:220}
+          );
+          return;
+        }
+        const text=(document.getElementById('feedbackText').value||'').trim();
+        storageSet('tcity_last_feedback',JSON.stringify({
+          rating:ratingValue,
+          comment:text,
+          createdAt:new Date().toISOString()
+        }));
+        auxBody.innerHTML=`
+          <div class="notice-detail flow-enter">
+            <div class="notice-detail-tag">ОБРАТНАЯ СВЯЗЬ</div>
+            <div class="notice-detail-title">СПАСИБО</div>
+            <div class="notice-detail-copy">Оценка отправлена.</div>
+            <div class="feedback-thanks">Мы всё прочитаем и учтём. Спасибо, что помогаете T-CITY становиться лучше.</div>
+          </div>
+        `;
+      });
+    }
+  }
+}
+
+/* =========================================================
+   SUPPORT
+   ========================================================= */
+const SUPPORT_ANSWERS={
+  'Выездной детейлинг':'Да, некоторые работы можно выполнить в выездном формате. Возможность зависит от задачи, места и условий. Напишите, что именно нужно сделать и где находится автомобиль — подскажем подходящий вариант.',
+  'Нестандартная техника':'Работаем не только с обычными автомобилями. Опишите технику — например, мотоцикл, квадроцикл или другой транспорт — и задачу. Если сможем выполнить работу качественно и безопасно, предложим вариант.',
+  'Какую химию используем?':'Подбираем состав под конкретную поверхность и задачу: кузов, салон, кожа, пластик или защитное покрытие. Для нас важнее правильное применение состава, чем громкое название на бутылке. Если хотите — уточните конкретную поверхность.',
+  'Керамика или кварц?':'Кварц — более простой защитный состав: добавляет гидрофобный эффект, блеск и облегчает уход. Керамика — более серьёзное и долговечное покрытие, которое требует тщательной подготовки кузова. Выбор зависит от состояния автомобиля и ожидаемого результата.'
+};
+
+function chatTime(){
+  const d=new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function defaultChat(){
+  return [{
+    side:'bot',
+    text:'Здравствуйте. Здесь вы можете задать интересующий вас вопрос. Если готового ответа не окажется, мы разберём его персонально и ответим в ближайшее время.',
+    time:chatTime(),
+    welcome:true
+  }];
+}
+function getChat(){
+  const raw=storageGet('tcity_support_chat_v034');
+  if(raw){
+    try{
+      const parsed=JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length){
+        // Upgrade old saved chat so the first welcome message can own quick actions.
+        if(parsed[0] && parsed[0].side==='bot') parsed[0].welcome=true;
+        return parsed;
+      }
+    }catch(_){}
+  }
+  const initial=defaultChat();
+  storageSet('tcity_support_chat_v034',JSON.stringify(initial));
+  return initial;
+}
+function saveChat(items){
+  storageSet('tcity_support_chat_v034',JSON.stringify(items));
+}
+function appendChat(side,text,extra={}){
+  const items=getChat();
+  items.push({side,text,time:chatTime(),...extra});
+  saveChat(items);
+}
+function escapeHtml(text){
+  return String(text)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+function quickQuestionsHtml(){
+  return `
+    <div class="quick-wrap">
+      <div class="quick-title">БЫСТРЫЙ ВОПРОС</div>
+      <div class="quick-list">
+        ${Object.keys(SUPPORT_ANSWERS).map(q=>`<button class="quick-question" data-quick="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('')}
+      </div>
+      <div class="quick-note">Можно выбрать готовый вопрос или написать свой вручную.</div>
+    </div>
+  `;
+}
+function chatBubble(m,index,withQuick=false){
+  const bubble=`
+    <div class="chat-row ${m.side==='user'?'user':'bot'}">
+      <div class="chat-bubble">${escapeHtml(m.text)}</div>
+      <div class="chat-meta">${m.side==='user'?'ВЫ':'T-CITY'} · ${m.time||''}</div>
+    </div>
+  `;
+  if(withQuick){
+    return `<div class="welcome-group">${bubble}${quickQuestionsHtml()}</div>`;
+  }
+  return bubble;
+}
+
+function normalizeSupportText(text){
+  return String(text)
+    .toLowerCase()
+    .replace(/[!?.,;:()[\]{}"'«»]/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function containsAny(text,words){
+  return words.some(w=>text.includes(w));
+}
+function localAssistantReply(text){
+  const n=normalizeSupportText(text);
+
+  if(!n){
+    return 'Напишите вопрос — постараюсь помочь.';
+  }
+
+  // Exact quick-answer topics first.
+  const exact=Object.entries(SUPPORT_ANSWERS).find(([q])=>normalizeSupportText(q)===n);
+  if(exact) return exact[1];
+
+  // Human small talk.
+  if(
+    n==='привет' || n==='приветик' || n==='здарова' || n==='здорово' ||
+    containsAny(n,['здравствуйте','здравствуй','добрый день','добрый вечер','доброе утро','hello',' hi'])
+  ){
+    return 'Здравствуйте. Чем могу помочь? Могу рассказать об услугах, стоимости, записи, графике работы или уходе за автомобилем.';
+  }
+  if(containsAny(n,['спасибо','благодарю','спс'])){
+    return 'Пожалуйста. Если появятся ещё вопросы — я здесь.';
+  }
+  if(containsAny(n,['как дела','как вы','что нового'])){
+    return 'Спасибо, всё хорошо. Готов помочь с вопросами по T-CITY и уходу за автомобилем.';
+  }
+  if(containsAny(n,['пока','до свидания','увидимся'])){
+    return 'До встречи. Если что-то понадобится — напишите сюда в любое время.';
+  }
+
+  // Location / schedule.
+  if(containsAny(n,['адрес','где вы','где находитесь','как доехать','локац'])){
+    return 'T-CITY | ESTETIC AUTO: г. Тюмень, ул. Василия Шамова, 8.';
+  }
+  if(containsAny(n,['график','режим работы','до скольки','во сколько откры','работаете','время работы'])){
+    return 'Работаем ежедневно с 10:00 до 21:00 по предварительной записи.';
+  }
+
+  // Booking.
+  if(containsAny(n,['записаться','хочу запись','запись на','как запис','забронировать'])){
+    return 'Записаться можно прямо в приложении: выберите тип автомобиля, услуги, свободную дату и время. Расчёт будет предварительным — окончательный объём работ можно изменить после осмотра автомобиля.';
+  }
+
+  // Prices / washing.
+  if(containsAny(n,['сколько стоит мойка','цена мойки','мойка цена','помыть машину','обычная мойка'])){
+    return 'Базовая ручная мойка сейчас начинается от 1 000 ₽ для седана, от 1 200 ₽ для кроссовера и от 1 400 ₽ для внедорожника. Итог зависит от состояния автомобиля.';
+  }
+  if(containsAny(n,['цена','стоимость','сколько стоит','прайс'])){
+    return 'Цены зависят от типа кузова и выбранных услуг. В разделе «Услуги и цены» можно собрать свой набор и сразу увидеть предварительную стоимость.';
+  }
+
+  // Ceramic / quartz with non-selling honesty.
+  if(containsAny(n,['нужна керамика','нужно керамик','стоит ли керамик','делать керамик'])){
+    return 'Это зависит от состояния кузова и того, какой результат вы хотите получить. На месте можем сначала осмотреть автомобиль. Если керамика вам не нужна, мы прямо об этом скажем — лишние услуги не навязываем.';
+  }
+  if(containsAny(n,['керамик','кварц'])){
+    return SUPPORT_ANSWERS['Керамика или кварц?'];
+  }
+
+  // Chemistry and common services.
+  if(containsAny(n,['какую химию','химия','составы','средства используете'])){
+    return SUPPORT_ANSWERS['Какую химию используем?'];
+  }
+  if(containsAny(n,['антидожд','дождь на стекло'])){
+    return 'Антидождь создаёт гидрофобный слой на стекле: вода легче собирается в капли и уходит потоком воздуха. Эффект и необходимость обработки лучше оценивать по состоянию стекла.';
+  }
+  if(containsAny(n,['химчист','почистить салон','грязный салон'])){
+    return 'Химчистка нужна, когда обычной уборки уже недостаточно: загрязнения в ткани, ковролине, пластике или коже требуют глубокой очистки. Перед работой оценим состояние салона и скажем, какой объём действительно нужен.';
+  }
+  if(containsAny(n,['полиров','царапин','царапины'])){
+    return 'Полировка помогает восстановить блеск и уменьшить часть поверхностных дефектов лака. Глубокие повреждения могут полностью не уйти — это лучше определить после осмотра.';
+  }
+  if(containsAny(n,['двигател','моторный отсек','под капотом'])){
+    return 'Детейлинг моторного отсека включает аккуратную очистку и уход за доступными поверхностями. Перед началом обязательно оцениваем состояние и риски для конкретного автомобиля.';
+  }
+
+  // Mobile / unusual vehicles.
+  if(containsAny(n,['выезд','на дому','приехать ко мне'])){
+    return SUPPORT_ANSWERS['Выездной детейлинг'];
+  }
+  if(containsAny(n,['квадро','мотоцикл','мото ','лодк','катер','нестандарт','техника'])){
+    return SUPPORT_ANSWERS['Нестандартная техника'];
+  }
+
+  // Promotions.
+  if(containsAny(n,['акции','скидк','бонус','подарок'])){
+    return 'Актуальные акции, персональные предложения и бонусы появляются в разделе уведомлений. Если на колокольчике есть красная точка — там есть что-то новое.';
+  }
+
+  // What can assistant do?
+  if(containsAny(n,['что ты умеешь','чем можешь помочь','помоги','что спросить'])){
+    return 'Могу подсказать адрес и график, объяснить услуги, сориентировать по предварительным ценам, рассказать про керамику, кварц, химию, запись и другие базовые вопросы T-CITY.';
+  }
+
+  // Safe fallback: only here do we hand off to a human.
+  return 'На этот вопрос лучше ответить персонально. Я передам его специалисту T-CITY — он разберётся в деталях и ответит здесь в ближайшее время.';
+}
+
+let supportReplyTimer=null;
+function renderSupportChat(){
+  showAux();
+  auxMode='support-chat';
+  auxTitle.textContent='ПОДДЕРЖКА';
+  auxSide.textContent='T-CITY';
+  auxBody.classList.add('chat-mode');
+
+  const messages=getChat();
+
+  auxBody.innerHTML=`
+    <div class="chat-shell flow-enter">
+      <div class="chat-scroll" id="chatScroll">
+        <div class="chat-day">ДИАЛОГ С T-CITY</div>
+        <div class="chat-messages" id="chatMessages">
+          ${messages.map((m,i)=>chatBubble(m,i,i===0 && m.welcome)).join('')}
+          <div class="chat-typing hidden" id="chatTyping">T-CITY печатает…</div>
+        </div>
+      </div>
+      <div class="chat-composer">
+        <input class="chat-input" id="chatInput" maxlength="500" placeholder="Напишите сообщение..." autocomplete="off">
+        <button class="chat-send" id="chatSend">↑</button>
+      </div>
+    </div>
+  `;
+  bindChatButtons();
+  scrollChatBottom(false);
+}
+function bindChatButtons(){
+  auxBody.querySelectorAll('[data-quick]').forEach(btn=>{
+    btn.addEventListener('click',()=>sendSupportMessage(btn.dataset.quick));
+  });
+  const send=document.getElementById('chatSend');
+  const input=document.getElementById('chatInput');
+  if(send) send.onclick=()=>sendSupportMessage();
+  if(input) input.onkeydown=e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      sendSupportMessage();
+    }
+  };
+}
+function scrollChatBottom(smooth=true){
+  setTimeout(()=>{
+    const scroll=document.getElementById('chatScroll');
+    if(scroll) scroll.scrollTo({top:scroll.scrollHeight,behavior:smooth?'smooth':'auto'});
+  },50);
+}
+function refreshChatMessages(){
+  const box=document.getElementById('chatMessages');
+  if(!box) return;
+  const messages=getChat();
+  box.innerHTML=
+    messages.map((m,i)=>chatBubble(m,i,i===0 && m.welcome)).join('')+
+    '<div class="chat-typing hidden" id="chatTyping">T-CITY печатает…</div>';
+  bindChatButtons();
+}
+function sendSupportMessage(prefill=null){
+  const input=document.getElementById('chatInput');
+  const text=(prefill!==null?prefill:(input?input.value:'')).trim();
+  if(!text) return;
+  if(input) input.value='';
+
+  appendChat('user',text);
+  refreshChatMessages();
+  scrollChatBottom(true);
+
+  const typing=document.getElementById('chatTyping');
+  if(typing) typing.classList.remove('hidden');
+
+  const reply=localAssistantReply(text);
+  clearTimeout(supportReplyTimer);
+  supportReplyTimer=setTimeout(()=>{
+    appendChat('bot',reply);
+    refreshChatMessages();
+    scrollChatBottom(true);
+  },650);
+}
+
+function openSupportSheet(){
+  sheetTitle.textContent='Поддержка';
+  sheetText.innerHTML=`
+    <div class="sheet-copy">Выберите удобный способ связи с T-CITY.</div>
+    <div class="sheet-choice">
+      <button id="supportChatChoice"><span>ЧАТ</span><span>→</span></button>
+      <button id="supportPhoneChoice"><span>ТЕЛЕФОН</span><span>→</span></button>
+    </div>
+  `;
+  shade.classList.remove('hidden');
+  document.getElementById('supportChatChoice').addEventListener('click',()=>{
+    closeSheet();
+    renderSupportChat();
+  });
+  document.getElementById('supportPhoneChoice').addEventListener('click',renderSupportPhone);
+}
+function renderSupportPhone(){
+  sheetTitle.textContent='Телефон';
+  sheetText.innerHTML=`
+    <div class="sheet-copy">Связаться с T-CITY напрямую:</div>
+    <div class="sheet-choice">
+      <a href="tel:+79324881706"><span>8 932 488-17-06</span><span>ПОЗВОНИТЬ</span></a>
+    </div>
+    <button class="flow-back-link" id="phoneBack">← НАЗАД</button>
+  `;
+  document.getElementById('phoneBack').addEventListener('click',openSupportSheet);
+}
+
+function closeSheet(){
+  shade.classList.add('hidden');
+}
+supportBtn.addEventListener('click',openSupportSheet);
+notifyBtn.addEventListener('click',renderNotifications);
+
+auxBackBtn.addEventListener('click',()=>{
+  if(auxMode==='notice-detail'){
+    renderNotifications();
+  }else{
+    closeAuxToHome();
+  }
+});
+
+document.querySelector('.close').addEventListener('click',closeSheet);
+shade.addEventListener('click',e=>{if(e.target===shade)closeSheet()});
+
+syncNotificationDot();
+
+</script>
+</body>
+</html>
