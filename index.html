@@ -1567,6 +1567,174 @@ button{font:inherit}
   .garage-card{min-height:88px}
 }
 
+
+/* =========================================================
+   WAVE 04.2 — CLIENT FUNCTIONAL ADDITIONS
+   Visual language intentionally inherits the approved app.
+   ========================================================= */
+.booking-list{
+  margin-top:24px;
+  border-top:1px solid #252525;
+}
+.booking-list-card{
+  width:100%;
+  min-height:112px;
+  border:0;
+  border-bottom:1px solid #252525;
+  background:transparent;
+  color:#d8d8d8;
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:18px;
+  padding:18px 2px;
+  text-align:left;
+}
+.booking-list-car{
+  display:block;
+  font-size:16px;
+  line-height:1.2;
+  letter-spacing:-.02em;
+}
+.booking-list-date{
+  display:block;
+  margin-top:8px;
+  color:#777;
+  font-size:11px;
+}
+.booking-list-status{
+  display:inline-block;
+  margin-top:10px;
+  border:1px solid #303030;
+  padding:5px 7px;
+  color:#8a8a8a;
+  font-size:8px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.booking-list-arrow{color:#4a4a4a;font-size:18px}
+
+.booking-status{
+  margin-top:22px;
+  border-top:1px solid #242424;
+  border-bottom:1px solid #242424;
+  padding:17px 0 14px;
+}
+.booking-status-kicker{
+  color:#5d5d5d;
+  font-size:8px;
+  letter-spacing:.13em;
+  margin-bottom:12px;
+}
+.booking-status-row{
+  display:grid;
+  grid-template-columns:24px 1fr;
+  gap:9px;
+  align-items:start;
+  position:relative;
+  padding:7px 0;
+  opacity:.32;
+}
+.booking-status-row::after{
+  content:"";
+  position:absolute;
+  left:8px;
+  top:25px;
+  bottom:-7px;
+  width:1px;
+  background:#252525;
+}
+.booking-status-row:last-child::after{display:none}
+.booking-status-row.done,
+.booking-status-row.active{opacity:1}
+.booking-status-dot{
+  width:17px;height:17px;
+  border:1px solid #484848;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  color:#c9c9c9;
+  font-size:9px;
+  margin-top:1px;
+  background:#050505;
+  z-index:1;
+}
+.booking-status-row.active .booking-status-dot{border-color:#a0a0a0}
+.booking-status-row strong{
+  display:block;
+  font-weight:400;
+  font-size:11px;
+  letter-spacing:.03em;
+  color:#bdbdbd;
+}
+.booking-status-row small{
+  display:block;
+  margin-top:3px;
+  color:#626262;
+  font-size:9px;
+}
+
+.booking-feedback{
+  margin-top:25px;
+  padding-top:19px;
+  border-top:1px solid #252525;
+}
+.booking-feedback-title{
+  font-size:17px;
+  letter-spacing:-.02em;
+}
+.booking-feedback-copy{
+  margin-top:8px;
+  color:#747474;
+  font-size:11px;
+  line-height:1.5;
+}
+.booking-feedback-stars{
+  display:flex;
+  gap:8px;
+  margin:18px 0;
+}
+.booking-feedback-stars button{
+  border:0;
+  background:transparent;
+  color:#303030;
+  font-size:30px;
+  padding:0;
+}
+.booking-feedback-stars button.active{color:#d4d4d4}
+.booking-feedback-text{
+  width:100%;
+  min-height:112px;
+  resize:none;
+  border:1px solid #292929;
+  background:#060606;
+  color:#d0d0d0;
+  padding:12px;
+  outline:none;
+  font:inherit;
+  font-size:12px;
+  line-height:1.5;
+  margin-bottom:10px;
+}
+.booking-demo-status{
+  display:block;
+  margin:22px auto 0;
+  border:0;
+  border-bottom:1px solid #393939;
+  background:transparent;
+  color:#505050;
+  padding:5px 0;
+  font-size:8px;
+  letter-spacing:.1em;
+}
+.booking-demo-note{
+  margin-top:7px;
+  text-align:center;
+  color:#393939;
+  font-size:8px;
+  line-height:1.4;
+}
+
 </style>
 </head>
 <body>
@@ -1577,7 +1745,7 @@ button{font:inherit}
 </section>
 
 <section id="intro" class="screen">
-  <video id="introVideo" src="tcity-intro.mp4" muted playsinline></video>
+  <video id="introVideo" src="tcity-intro.mp4?v=042" muted playsinline preload="auto"></video>
   <button class="skip">SKIP</button>
 </section>
 
@@ -1766,6 +1934,19 @@ let introStarted=false;
 let homeStarted=false;
 let zoomRAF=0;
 
+let introRetryTimer=0;
+let introWatchTimer=0;
+let introAttempt=0;
+let introStartAt=0;
+let introLastTime=0;
+let introLastProgressAt=0;
+let introReloaded=false;
+
+try{
+  introVideo.preload='auto';
+  introVideo.load();
+}catch(_){}
+
 function animateVideoZoom(){
   if(!introStarted || homeStarted) return;
   const t=introVideo.currentTime;
@@ -1782,8 +1963,7 @@ function animateVideoZoom(){
   }else if(t>=2.55 && t<3.05){
     scale=1.82;
   }else if(t>=3.05 && t<3.52){
-    // Return to normal size only while the source frame is already pure black,
-    // so the viewer never sees the C ring or a zoom reset.
+    // Approved zoom reset remains hidden inside the pure-black source frames.
     const k=smooth(Math.min(1,(t-3.05)/(3.52-3.05)));
     scale=1.82+((1-1.82)*k);
   }
@@ -1792,23 +1972,107 @@ function animateVideoZoom(){
   zoomRAF=requestAnimationFrame(animateVideoZoom);
 }
 
+function clearIntroRecovery(){
+  clearTimeout(introRetryTimer);
+  clearInterval(introWatchTimer);
+}
+
+function tryIntroPlay(){
+  if(!introStarted || homeStarted) return;
+  introAttempt+=1;
+  introVideo.muted=true;
+  introVideo.playsInline=true;
+  introVideo.playbackRate=1.18;
+
+  const p=introVideo.play();
+  if(p && p.then){
+    p.then(()=>{
+      introLastProgressAt=performance.now();
+    }).catch(()=>{
+      scheduleIntroRetry();
+    });
+  }
+}
+
+function scheduleIntroRetry(){
+  if(!introStarted || homeStarted) return;
+  clearTimeout(introRetryTimer);
+  introRetryTimer=setTimeout(()=>{
+    if(!introStarted || homeStarted) return;
+
+    // If Telegram/iOS never actually started frame progression,
+    // reload the source once and immediately retry from the user's gesture flow.
+    if(introVideo.currentTime<0.08 && introAttempt>=2 && !introReloaded){
+      introReloaded=true;
+      try{
+        introVideo.pause();
+        introVideo.load();
+        introVideo.currentTime=0;
+      }catch(_){}
+    }
+    tryIntroPlay();
+  },320);
+}
+
+function startIntroWatch(){
+  clearInterval(introWatchTimer);
+  introLastTime=introVideo.currentTime||0;
+  introLastProgressAt=performance.now();
+
+  introWatchTimer=setInterval(()=>{
+    if(!introStarted || homeStarted){
+      clearIntroRecovery();
+      return;
+    }
+
+    const now=performance.now();
+    const t=introVideo.currentTime||0;
+
+    if(t>introLastTime+0.015){
+      introLastTime=t;
+      introLastProgressAt=now;
+    }else if(now-introLastProgressAt>1050){
+      // A play() promise can resolve while the mobile WebView is still stalled.
+      // Actively ask it to continue instead of leaving the user on a black screen.
+      introLastProgressAt=now;
+      scheduleIntroRetry();
+    }
+
+    // Last-resort protection: never leave the app permanently frozen.
+    // SKIP still remains available, but after repeated failed starts we enter home ourselves.
+    if(now-introStartAt>7000 && t<0.12){
+      beginHomeBlend(true);
+    }
+  },260);
+}
+
 function startIntro(){
   if(introStarted) return;
   introStarted=true;
-  introVideo.currentTime=0;
-  introVideo.playbackRate=1.18;
+  introAttempt=0;
+  introReloaded=false;
+  introStartAt=performance.now();
+  introLastProgressAt=introStartAt;
+
+  try{
+    introVideo.currentTime=0;
+    introVideo.playbackRate=1.18;
+  }catch(_){}
+
   intro.classList.add('active');
   launch.classList.add('fade-out');
-  const p=introVideo.play();
-  if(p && p.catch) p.catch(()=>{});
+
+  tryIntroPlay();
+  startIntroWatch();
   zoomRAF=requestAnimationFrame(animateVideoZoom);
   setTimeout(()=>launch.classList.add('hidden'),260);
 }
+
 launch.addEventListener('pointerdown',e=>{
   if(introStarted) return;
   activePointer=e.pointerId;
   startY=e.clientY;
-  try{launch.setPointerCapture(e.pointerId)}catch(_){ }
+  try{launch.setPointerCapture(e.pointerId)}catch(_){}
 });
 launch.addEventListener('pointerup',e=>{
   if(activePointer!==e.pointerId) return;
@@ -1825,6 +2089,7 @@ launch.addEventListener('pointercancel',()=>{
 function beginHomeBlend(immediate=false){
   if(homeStarted) return;
   homeStarted=true;
+  clearIntroRecovery();
   cancelAnimationFrame(zoomRAF);
   introVideo.style.transform='scale(1)';
   home.classList.remove('hidden');
@@ -1852,10 +2117,23 @@ function beginHomeBlend(immediate=false){
 }
 
 introVideo.addEventListener('timeupdate',()=>{
-  // The source animation has already docked the logo by this moment.
-  // Blend the real menu over that same held frame instead of cutting to a new scene.
+  if((introVideo.currentTime||0)>introLastTime+0.015){
+    introLastTime=introVideo.currentTime;
+    introLastProgressAt=performance.now();
+  }
+  // Approved first-wave transition point is unchanged.
   if(introVideo.currentTime>=11.55) beginHomeBlend(false);
 });
+introVideo.addEventListener('playing',()=>{
+  introLastTime=introVideo.currentTime||0;
+  introLastProgressAt=performance.now();
+});
+introVideo.addEventListener('waiting',scheduleIntroRetry);
+introVideo.addEventListener('stalled',scheduleIntroRetry);
+introVideo.addEventListener('suspend',()=>{
+  if(introStarted && !homeStarted && introVideo.currentTime<0.1) scheduleIntroRetry();
+});
+introVideo.addEventListener('error',scheduleIntroRetry);
 introVideo.addEventListener('ended',()=>beginHomeBlend(false));
 document.querySelector('.skip').addEventListener('click',()=>beginHomeBlend(true));
 
@@ -2148,7 +2426,8 @@ const flowState={
   dateKey:null,
   dateIndex:null,
   time:null,
-  garageCarId:null
+  garageCarId:null,
+  editingBookingId:null
 };
 
 function money(n){
@@ -2229,6 +2508,7 @@ function resetFlowSelection(keepEntry=true){
   flowState.dateIndex=null;
   flowState.time=null;
   flowState.garageCarId=null;
+  flowState.editingBookingId=null;
   if(keepEntry) flowState.entry=entry;
 }
 function showFlowCoach(kind){
@@ -2268,9 +2548,10 @@ function closeFlow(){
 }
 flowMenuBtn.addEventListener('click',closeFlow);
 
-function renderVehicle(entry='services'){
+function renderVehicle(entry='services',editingBookingId=null){
   flowState.entry=entry;
   resetFlowSelection(true);
+  flowState.editingBookingId=editingBookingId;
   showFlow();
   setFlowStep('01 / 03');
   flowSummary.classList.add('hidden');
@@ -2458,18 +2739,74 @@ function renderCustom(){
 const DOW=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
 const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
-function dateItems(){
-  const base=new Date();
-  base.setHours(12,0,0,0);
-  const items=[];
-  for(let i=0;i<14;i++){
-    const d=new Date(base);
-    d.setDate(base.getDate()+i);
-    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    items.push({i,date:d,key,full:fullBusy(i)});
+const BOOKINGS_KEY='tcity_bookings_v042';
+const FEEDBACKS_KEY='tcity_booking_feedbacks_v042';
+
+const BOOKING_STATUS={
+  waiting:{title:'ЖДЁМ ВАС',short:'Ждём вас'},
+  work:{title:'АВТОМОБИЛЬ В РАБОТЕ',short:'Автомобиль в работе'},
+  ready:{title:'ГОТОВ · МОЖНО ЗАБИРАТЬ',short:'Готов'}
+};
+const BOOKING_STATUS_ORDER=['waiting','work','ready'];
+
+function bookingId(){
+  if(window.crypto && typeof window.crypto.randomUUID==='function'){
+    try{return window.crypto.randomUUID()}catch(_){}
   }
-  return items;
+  return `booking-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
+function normalizeBooking(b){
+  if(!b || typeof b!=='object') return null;
+  return {
+    ...b,
+    id:b.id||bookingId(),
+    status:BOOKING_STATUS[b.status]?b.status:'waiting',
+    createdAt:b.createdAt||new Date().toISOString()
+  };
+}
+function migrateOldBooking042(){
+  if(storageGet(BOOKINGS_KEY)!==null) return;
+  let migrated=[];
+  const oldRaw=storageGet('tcity_current_booking');
+  if(oldRaw){
+    try{
+      const old=normalizeBooking(JSON.parse(oldRaw));
+      if(old) migrated=[old];
+    }catch(_){}
+  }
+  storageSet(BOOKINGS_KEY,JSON.stringify(migrated));
+  storageRemove('tcity_current_booking');
+}
+function getBookings(){
+  migrateOldBooking042();
+  const raw=storageGet(BOOKINGS_KEY);
+  if(!raw) return [];
+  try{
+    const parsed=JSON.parse(raw);
+    if(!Array.isArray(parsed)) return [];
+    const normalized=parsed.map(normalizeBooking).filter(Boolean);
+    return normalized;
+  }catch(_){
+    return [];
+  }
+}
+function saveBookings(items){
+  storageSet(BOOKINGS_KEY,JSON.stringify(items));
+  updateBookingMenu();
+}
+function getBookingById(id){
+  return getBookings().find(b=>b.id===id)||null;
+}
+function getCurrentBooking(){
+  return getBookings()[0]||null;
+}
+function removeBooking(id){
+  saveBookings(getBookings().filter(b=>b.id!==id));
+}
+function bookingSortValue(b){
+  return `${b.dateKey||'9999-99-99'}-${String(b.time??99).padStart(2,'0')}`;
+}
+
 function fullBusy(i){
   return i===2 || i===8;
 }
@@ -2491,14 +2828,39 @@ function busyBlocks(i){
   };
   return map[i]||[];
 }
+function bookedBlocksForDate(dateKey){
+  return getBookings()
+    .filter(b=>b.dateKey===dateKey && b.id!==flowState.editingBookingId)
+    .map(b=>[Number(b.time),Number(b.time)+Math.max(1,Number(b.hours)||1)]);
+}
 function reserveHours(){
   return Math.max(1,Math.ceil(calcSelection().hours));
 }
-function canStart(index,start){
+function canStart(index,start,dateKey=flowState.dateKey){
   const duration=reserveHours();
   const end=start+duration;
   if(end>21) return false;
-  return !busyBlocks(index).some(([a,b])=>start<b && end>a);
+  const blocks=[...busyBlocks(index),...bookedBlocksForDate(dateKey)];
+  return !blocks.some(([a,b])=>start<b && end>a);
+}
+function dateHasAnyStart(index,key){
+  if(fullBusy(index)) return false;
+  for(let h=10;h<21;h++){
+    if(canStart(index,h,key)) return true;
+  }
+  return false;
+}
+function dateItems(){
+  const base=new Date();
+  base.setHours(12,0,0,0);
+  const items=[];
+  for(let i=0;i<14;i++){
+    const d=new Date(base);
+    d.setDate(base.getDate()+i);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    items.push({i,date:d,key,full:!dateHasAnyStart(i,key)});
+  }
+  return items;
 }
 function formatLongDate(key){
   const d=new Date(key+'T12:00:00');
@@ -2589,7 +2951,7 @@ function renderTimeArea(){
       <div class="flow-section-title">ВРЕМЯ · ${formatLongDate(flowState.dateKey).toUpperCase()}</div>
       <div class="time-grid">
         ${starts.map(h=>{
-          const ok=canStart(flowState.dateIndex,h);
+          const ok=canStart(flowState.dateIndex,h,flowState.dateKey);
           const selected=flowState.time===h;
           return `<button class="time-slot ${selected?'selected':''}" data-time="${h}" ${ok?'':'disabled'}>${String(h).padStart(2,'0')}:00</button>`;
         }).join('')}
@@ -2621,7 +2983,7 @@ function renderBookingAction(){
   wrap.id='bookingAction';
   wrap.className='flow-section';
   wrap.innerHTML=`
-    <button class="flow-btn primary" id="confirmBooking" style="width:100%;min-height:48px">ЗАПИСАТЬСЯ</button>
+    <button class="flow-btn primary" id="confirmBooking" style="width:100%;min-height:48px">${flowState.editingBookingId?'СОХРАНИТЬ ИЗМЕНЕНИЯ':'ЗАПИСАТЬСЯ'}</button>
   `;
   const area=document.getElementById('timeArea');
   area.appendChild(wrap);
@@ -2630,7 +2992,11 @@ function renderBookingAction(){
 
 function bookingSnapshot(){
   const calc=calcSelection();
-  return {
+  const previous=flowState.editingBookingId?getBookingById(flowState.editingBookingId):null;
+  return normalizeBooking({
+    id:previous?.id||bookingId(),
+    createdAt:previous?.createdAt||new Date().toISOString(),
+    status:'waiting',
     vehicle:flowState.vehicle,
     garageCarId:flowState.garageCarId,
     vehicleName:flowState.garageCarId ? (GARAGE_CARS.find(c=>c.id===flowState.garageCarId)?.name || VEHICLES[flowState.vehicle].name) : VEHICLES[flowState.vehicle].name,
@@ -2642,23 +3008,23 @@ function bookingSnapshot(){
     hours:reserveHours(),
     rows:calc.rows,
     address:'г. Тюмень, ул. Василия Шамова, 8'
-  };
+  });
 }
 function saveBooking(){
   const b=bookingSnapshot();
-  storageSet('tcity_current_booking',JSON.stringify(b));
-  updateBookingMenu();
+  let items=getBookings();
+  const idx=items.findIndex(x=>x.id===b.id);
+  if(idx>=0) items[idx]=b;
+  else items.push(b);
+  items.sort((a,b)=>bookingSortValue(a).localeCompare(bookingSortValue(b)));
+  saveBookings(items);
+  flowState.editingBookingId=null;
   renderSuccess(b);
 }
-function getCurrentBooking(){
-  const raw=storageGet('tcity_current_booking');
-  if(!raw) return null;
-  try{return JSON.parse(raw)}catch(_){return null}
-}
 function updateBookingMenu(){
-  const b=getCurrentBooking();
+  const bookings=getBookings();
   const label=document.querySelector('.menu button[data-page="booking"] .label');
-  if(label) label.textContent=b?'Моя запись':'Запись';
+  if(label) label.textContent=bookings.length?'Моя запись':'Запись';
 }
 
 function detailRows(b){
@@ -2701,7 +3067,7 @@ function renderSuccess(b){
     closeFlow();
     showBookingToast();
   });
-  document.getElementById('successBooking').addEventListener('click',()=>renderCurrentBooking(b));
+  document.getElementById('successBooking').addEventListener('click',renderBookingsList);
 }
 function preliminaryBookingCard(){
   return `
@@ -2718,8 +3084,36 @@ function preliminaryBookingCard(){
   `;
 }
 
-function renderCurrentBooking(b=getCurrentBooking()){
-  if(!b){
+function bookingStatusIndex(status){
+  const i=BOOKING_STATUS_ORDER.indexOf(status);
+  return i<0?0:i;
+}
+function bookingStatusTimeline(b){
+  const current=bookingStatusIndex(b.status);
+  const labels=[
+    ['ЖДЁМ ВАС','Запись подтверждена'],
+    ['АВТОМОБИЛЬ В РАБОТЕ','Работы начались'],
+    ['ГОТОВ','Можно забирать']
+  ];
+  return `
+    <div class="booking-status">
+      <div class="booking-status-kicker">СТАТУС</div>
+      ${labels.map((x,i)=>`
+        <div class="booking-status-row ${i<current?'done':''} ${i===current?'active':''}">
+          <span class="booking-status-dot">${i<current?'✓':i===current?'•':''}</span>
+          <span><strong>${x[0]}</strong><small>${x[1]}</small></span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function bookingCardStatus(b){
+  return BOOKING_STATUS[b.status]?.short||BOOKING_STATUS.waiting.short;
+}
+
+function renderBookingsList(){
+  const bookings=getBookings().sort((a,b)=>bookingSortValue(a).localeCompare(bookingSortValue(b)));
+  if(!bookings.length){
     renderVehicle('booking');
     return;
   }
@@ -2729,27 +3123,195 @@ function renderCurrentBooking(b=getCurrentBooking()){
   flowBody.innerHTML=`
     <div class="flow-enter">
       <div class="eyebrow">T-CITY | ESTETIC AUTO</div>
-      <h1 class="flow-title">МОЯ ЗАПИСЬ</h1>
-      <div class="current-badge">ЗАПИСЬ ПОДТВЕРЖДЕНА</div>
-      ${detailRows(b)}
-      ${preliminaryBookingCard()}
-      <div class="confirm-actions">
-        <button class="flow-btn primary" id="currentHome">ГЛАВНОЕ МЕНЮ</button>
-        <button class="flow-btn" id="currentChange">ИЗМЕНИТЬ ЗАПИСЬ</button>
-        <button class="flow-btn" id="currentCancel">ОТМЕНИТЬ ЗАПИСЬ</button>
+      <h1 class="flow-title">${bookings.length>1?'МОИ ЗАПИСИ':'МОЯ ЗАПИСЬ'}</h1>
+      <p class="flow-lead">${bookings.length>1?'Каждый автомобиль хранится отдельной записью.':'Здесь можно посмотреть статус, изменить или отменить запись.'}</p>
+
+      <div class="booking-list">
+        ${bookings.map(b=>`
+          <button class="booking-list-card" data-booking-id="${b.id}">
+            <span>
+              <span class="booking-list-car">${b.vehicleName}</span>
+              <span class="booking-list-date">${formatLongDate(b.dateKey)} · ${String(b.time).padStart(2,'0')}:00</span>
+              <span class="booking-list-status">${bookingCardStatus(b)}</span>
+            </span>
+            <span class="booking-list-arrow">→</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <button class="flow-btn" id="addAnotherBooking" style="width:100%;margin-top:20px">+ ЗАПИСАТЬ ЕЩЁ АВТОМОБИЛЬ</button>
+      <button class="flow-back-link" id="bookingsHome">← ГЛАВНОЕ МЕНЮ</button>
+    </div>
+  `;
+  flowBody.scrollTop=0;
+  flowBody.querySelectorAll('[data-booking-id]').forEach(btn=>{
+    btn.addEventListener('click',()=>renderCurrentBooking(btn.dataset.bookingId));
+  });
+  document.getElementById('addAnotherBooking').addEventListener('click',()=>renderVehicle('booking'));
+  document.getElementById('bookingsHome').addEventListener('click',closeFlow);
+}
+
+function renderBookingFeedback(b){
+  return `
+    <div class="booking-feedback">
+      <div class="booking-feedback-title">КАКИЕ У ВАС ВПЕЧАТЛЕНИЯ?</div>
+      <div class="booking-feedback-copy">Оцените посещение и оставьте пожелание или замечание. Мы всё прочитаем.</div>
+      <div class="booking-feedback-stars" id="bookingFeedbackStars">
+        ${[1,2,3,4,5].map(i=>`<button type="button" data-booking-star="${i}" aria-label="${i} звезд">★</button>`).join('')}
+      </div>
+      <textarea class="booking-feedback-text" id="bookingFeedbackText" placeholder="Пожелания, впечатления или замечания..."></textarea>
+      <button class="flow-btn primary" id="bookingFeedbackSend" style="width:100%">ОТПРАВИТЬ</button>
+    </div>
+  `;
+}
+
+function bindBookingFeedback(b){
+  let value=0;
+  const stars=[...document.querySelectorAll('[data-booking-star]')];
+  stars.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      value=Number(btn.dataset.bookingStar);
+      stars.forEach(s=>s.classList.toggle('active',Number(s.dataset.bookingStar)<=value));
+    });
+  });
+  const send=document.getElementById('bookingFeedbackSend');
+  if(!send) return;
+  send.addEventListener('click',()=>{
+    if(!value){
+      const box=document.getElementById('bookingFeedbackStars');
+      if(box) box.animate(
+        [{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],
+        {duration:220}
+      );
+      return;
+    }
+    const comment=(document.getElementById('bookingFeedbackText')?.value||'').trim();
+
+    let saved=[];
+    try{saved=JSON.parse(storageGet(FEEDBACKS_KEY)||'[]')}catch(_){}
+    if(!Array.isArray(saved)) saved=[];
+    saved.push({
+      bookingId:b.id,
+      vehicleName:b.vehicleName,
+      rating:value,
+      comment,
+      createdAt:new Date().toISOString()
+    });
+    storageSet(FEEDBACKS_KEY,JSON.stringify(saved));
+
+    // Keep compatibility with the existing feedback notification.
+    storageSet('tcity_last_feedback',JSON.stringify({
+      rating:value,
+      comment,
+      createdAt:new Date().toISOString()
+    }));
+
+    removeBooking(b.id);
+    renderFeedbackThanks();
+  });
+}
+function renderFeedbackThanks(){
+  showFlow();
+  setFlowStep('ГОТОВО');
+  flowSummary.classList.add('hidden');
+  flowBody.innerHTML=`
+    <div class="confirm-box flow-enter">
+      <div style="width:100%">
+        <div class="confirm-mark">✓</div>
+        <div class="confirm-title">СПАСИБО</div>
+        <div class="confirm-sub">Обратная связь сохранена.<br>Будем рады видеть вас снова.</div>
+        <div class="confirm-actions">
+          <button class="flow-btn primary" id="feedbackHome">ГЛАВНОЕ МЕНЮ</button>
+          <button class="flow-btn" id="feedbackNewBooking">ЗАПИСАТЬСЯ СНОВА</button>
+        </div>
       </div>
     </div>
   `;
   flowBody.scrollTop=0;
-  document.getElementById('currentHome').addEventListener('click',closeFlow);
-  document.getElementById('currentChange').addEventListener('click',()=>{
-    if(b.garageCarId && GARAGE_CARS.some(c=>c.id===b.garageCarId)) startGarageBooking(b.garageCarId);
-    else renderVehicle('booking');
-  });
-  document.getElementById('currentCancel').addEventListener('click',openCancelBookingSheet);
+  document.getElementById('feedbackHome').addEventListener('click',closeFlow);
+  document.getElementById('feedbackNewBooking').addEventListener('click',()=>renderVehicle('booking'));
 }
 
-function openCancelBookingSheet(){
+function advanceBookingStatus(id){
+  const items=getBookings();
+  const b=items.find(x=>x.id===id);
+  if(!b) return;
+  const i=bookingStatusIndex(b.status);
+  if(i<BOOKING_STATUS_ORDER.length-1){
+    b.status=BOOKING_STATUS_ORDER[i+1];
+    saveBookings(items);
+  }
+  renderCurrentBooking(id);
+}
+
+function renderCurrentBooking(input){
+  let b=null;
+  if(typeof input==='string') b=getBookingById(input);
+  else if(input && input.id) b=getBookingById(input.id)||normalizeBooking(input);
+  else b=getCurrentBooking();
+
+  if(!b){
+    renderVehicle('booking');
+    return;
+  }
+
+  showFlow();
+  setFlowStep('МОЯ ЗАПИСЬ');
+  flowSummary.classList.add('hidden');
+  const isWaiting=b.status==='waiting';
+  const isReady=b.status==='ready';
+
+  flowBody.innerHTML=`
+    <div class="flow-enter">
+      <div class="eyebrow">T-CITY | ESTETIC AUTO</div>
+      <h1 class="flow-title">МОЯ ЗАПИСЬ</h1>
+      <div class="current-badge">${BOOKING_STATUS[b.status]?.title||BOOKING_STATUS.waiting.title}</div>
+      ${bookingStatusTimeline(b)}
+      ${detailRows(b)}
+      ${preliminaryBookingCard()}
+
+      ${isReady?renderBookingFeedback(b):''}
+
+      <div class="confirm-actions">
+        <button class="flow-btn primary" id="currentHome">ГЛАВНОЕ МЕНЮ</button>
+        ${getBookings().length>1?'<button class="flow-btn" id="currentAll">ВСЕ МОИ ЗАПИСИ</button>':''}
+        ${isWaiting?'<button class="flow-btn" id="currentChange">ИЗМЕНИТЬ ЗАПИСЬ</button>':''}
+        ${isWaiting?'<button class="flow-btn" id="currentCancel">ОТМЕНИТЬ ЗАПИСЬ</button>':''}
+      </div>
+
+      ${!isReady?`
+        <button class="booking-demo-status" id="demoNextStatus">ДЕМО · СЛЕДУЮЩИЙ СТАТУС</button>
+        <div class="booking-demo-note">В реальной версии статус меняется из T-CITY ADMIN.</div>
+      `:''}
+    </div>
+  `;
+  flowBody.scrollTop=0;
+
+  document.getElementById('currentHome').addEventListener('click',closeFlow);
+  const all=document.getElementById('currentAll');
+  if(all) all.addEventListener('click',renderBookingsList);
+
+  const change=document.getElementById('currentChange');
+  if(change){
+    change.addEventListener('click',()=>{
+      if(b.garageCarId && GARAGE_CARS.some(c=>c.id===b.garageCarId)){
+        startGarageBooking(b.garageCarId,b.id);
+      }else{
+        renderVehicle('booking',b.id);
+      }
+    });
+  }
+
+  const cancel=document.getElementById('currentCancel');
+  if(cancel) cancel.addEventListener('click',()=>openCancelBookingSheet(b.id));
+
+  const next=document.getElementById('demoNextStatus');
+  if(next) next.addEventListener('click',()=>advanceBookingStatus(b.id));
+
+  if(isReady) bindBookingFeedback(b);
+}
+
+function openCancelBookingSheet(id){
   sheetTitle.textContent='Отменить запись?';
   sheetText.innerHTML=`
     <div class="sheet-copy">Дата и время будут освобождены. Это действие можно подтвердить или оставить запись без изменений.</div>
@@ -2761,9 +3323,8 @@ function openCancelBookingSheet(){
   shade.classList.remove('hidden');
   document.getElementById('keepBooking').addEventListener('click',closeSheet);
   document.getElementById('confirmCancelBooking').addEventListener('click',()=>{
-    storageRemove('tcity_current_booking');
+    removeBooking(id);
     closeSheet();
-    updateBookingMenu();
     renderCancelledBooking();
   });
 }
@@ -2781,6 +3342,7 @@ function renderCancelledBooking(){
         <div class="confirm-actions">
           <button class="flow-btn primary" id="cancelledHome">ГЛАВНОЕ МЕНЮ</button>
           <button class="flow-btn" id="cancelledNew">ЗАПИСАТЬСЯ СНОВА</button>
+          ${getBookings().length?'<button class="flow-btn" id="cancelledOthers">ОСТАЛЬНЫЕ ЗАПИСИ</button>':''}
         </div>
       </div>
     </div>
@@ -2788,6 +3350,8 @@ function renderCancelledBooking(){
   flowBody.scrollTop=0;
   document.getElementById('cancelledHome').addEventListener('click',closeFlow);
   document.getElementById('cancelledNew').addEventListener('click',()=>renderVehicle('booking'));
+  const others=document.getElementById('cancelledOthers');
+  if(others) others.addEventListener('click',renderBookingsList);
 }
 
 
@@ -2831,7 +3395,13 @@ const GARAGE_CARS=[
       {date:'5 августа 2026',services:'CARE · очистка битума',price:2200},
       {date:'11 июля 2026',services:'BASE · антидождь',price:2500}
     ]
-  }
+  },
+  {
+    id:'clsamg2',brand:'MERCEDES-BENZ',name:'Mercedes-Benz CLS AMG',plate:'А937ХУ172',type:'sedan',shape:'coupe',
+    image:'garage-mercedes-cls-amg.png',
+    info:{'Пробег':'—','Госномер':'А937ХУ172','Цвет':'Чёрный','Поколение':'Второе','Год выпуска':'—','VIN':'—'},
+    visits:[]
+  },
 ];
 
 let garageView='list';
@@ -2876,6 +3446,13 @@ function closeGarage(){
 }
 function setGarageBack(mode){garageView=mode}
 
+function visitCountText(n){
+  if(n===0) return 'нет посещений';
+  if(n===1) return '1 посещение';
+  if(n>=2 && n<=4) return `${n} посещения`;
+  return `${n} посещений`;
+}
+
 function showGarageList(){
   showGarage();
   selectedGarageCarId=null;
@@ -2894,7 +3471,7 @@ function showGarageList(){
             <span>
               <span class="garage-card-brand">${car.brand}</span>
               <span class="garage-card-name">${car.name}</span>
-              <span class="garage-card-meta">${car.plate} · ${car.visits.length} посещения</span>
+              <span class="garage-card-meta">${car.plate} · ${visitCountText(car.visits.length)}</span>
             </span>
             <span class="garage-card-arrow">→</span>
           </button>`).join('')}
@@ -2928,7 +3505,7 @@ function showGarageCar(id){
         <div class="garage-hero-car">${garageCarSvg(car,false)}</div>
       </div>
       <div class="garage-grid-actions">
-        <button class="garage-nav-card" data-garage-view="history"><span><strong>История посещений</strong><span>${car.visits.length} визита · услуги и суммы</span></span><span class="garage-nav-arrow">→</span></button>
+        <button class="garage-nav-card" data-garage-view="history"><span><strong>История посещений</strong><span>${visitCountText(car.visits.length)} · услуги и суммы</span></span><span class="garage-nav-arrow">→</span></button>
         <button class="garage-nav-card" data-garage-view="info"><span><strong>Информация об авто</strong><span>Пробег · госномер · цвет · год · VIN</span></span><span class="garage-nav-arrow">→</span></button>
         <button class="garage-nav-card" data-garage-view="preferences"><span><strong>Ваши предпочтения</strong><span>Напиток · аромат · любые пожелания</span></span><span class="garage-nav-arrow">→</span></button>
       </div>
@@ -2948,7 +3525,9 @@ function showGarageHistory(id){
     <div class="garage-kicker">${car.name.toUpperCase()}</div>
     <h1 class="garage-title">ИСТОРИЯ ПОСЕЩЕНИЙ</h1>
     <p class="garage-lead">Здесь сохраняются визиты, выполненные услуги и сумма каждого посещения.</p>
-    <div class="garage-section">${car.visits.map(v=>`<article class="visit-card"><div class="visit-date">${v.date.toUpperCase()}</div><div class="visit-services">${v.services}</div><div class="visit-price">${money(v.price)}</div></article>`).join('')}</div>
+    <div class="garage-section">${car.visits.length
+      ?car.visits.map(v=>`<article class="visit-card"><div class="visit-date">${v.date.toUpperCase()}</div><div class="visit-services">${v.services}</div><div class="visit-price">${money(v.price)}</div></article>`).join('')
+      :'<div class="garage-list-note">История посещений пока пуста.</div>'}</div>
   </div>`;
   garageBody.scrollTop=0;
 }
@@ -3053,14 +3632,17 @@ garageBackBtn.addEventListener('click',()=>{
   showGarageList();
 });
 
-function startGarageBooking(id){
+function startGarageBooking(id,editingBookingId=null){
   const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
   flowState.entry='garage';
   flowState.vehicle=car.type;
   flowState.garageCarId=car.id;
   flowState.packageId=null;
   flowState.extras=new Set();
-  flowState.dateKey=null;flowState.dateIndex=null;flowState.time=null;
+  flowState.dateKey=null;
+  flowState.dateIndex=null;
+  flowState.time=null;
+  flowState.editingBookingId=editingBookingId;
   renderPackages();
 }
 
@@ -3083,8 +3665,7 @@ document.querySelectorAll('.menu button').forEach(btn=>{
       return;
     }
     if(target==='booking'){
-      const b=getCurrentBooking();
-      if(b) renderCurrentBooking(b);
+      if(getBookings().length) renderBookingsList();
       else renderVehicle('booking');
       return;
     }
