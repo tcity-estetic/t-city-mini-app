@@ -1735,6 +1735,80 @@ button{font:inherit}
   line-height:1.4;
 }
 
+
+/* =========================================================
+   WAVE 04.3 — T-БОНУСЫ + ЗАВЕРШЕНИЕ ВИЗИТА
+   ========================================================= */
+.tbonus-card{
+  width:100%;
+  border:1px solid #292929;
+  background:#030303;
+  color:#d6d6d6;
+  padding:14px;
+  margin:18px 0 8px;
+  display:grid;
+  grid-template-columns:46px 1fr auto;
+  gap:12px;
+  align-items:center;
+  text-align:left;
+}
+.tbonus-coin{
+  width:42px;height:42px;border:1px solid #3a3a3a;border-radius:50%;
+  display:grid;place-items:center;overflow:hidden;background:#000;
+}
+.tbonus-coin img{width:34px;height:34px;object-fit:contain;filter:grayscale(1)}
+.tbonus-copy strong{display:block;font-size:13px;font-weight:400;letter-spacing:.01em}
+.tbonus-copy span{display:block;margin-top:5px;color:#5c5c5c;font-size:8px;line-height:1.4}
+.tbonus-balance{font-size:18px;white-space:nowrap;letter-spacing:-.03em}
+.tbonus-wallet-head{
+  border:1px solid #292929;background:#030303;padding:18px;margin-top:18px;text-align:center;
+}
+.tbonus-wallet-head .tbonus-coin{margin:0 auto 12px;width:58px;height:58px}
+.tbonus-wallet-head .tbonus-coin img{width:46px;height:46px}
+.tbonus-big{font-size:34px;letter-spacing:-.05em}
+.tbonus-label{margin-top:5px;color:#616161;font-size:8px;letter-spacing:.12em}
+.tbonus-rule{margin-top:14px;color:#777;font-size:10px;line-height:1.55}
+.tbonus-history{border-top:1px solid #252525;margin-top:20px}
+.tbonus-tx{
+  border-bottom:1px solid #252525;
+  display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px 0;
+}
+.tbonus-tx strong{display:block;font-size:10px;font-weight:400;color:#b8b8b8}
+.tbonus-tx small{display:block;margin-top:4px;color:#505050;font-size:8px}
+.tbonus-tx span:last-child{font-size:12px}
+.tbonus-positive{color:#c8c8c8}.tbonus-negative{color:#8a6666}
+.bonus-pay-card{
+  border:1px solid #292929;background:#030303;padding:13px;margin:10px 0 13px;
+}
+.bonus-pay-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.bonus-pay-top strong{font-size:11px;font-weight:400}
+.bonus-pay-top span{font-size:9px;color:#666}
+.bonus-pay-row{display:grid;grid-template-columns:1fr 90px;gap:8px;margin-top:10px}
+.bonus-pay-row input{
+  width:100%;border:1px solid #2b2b2b;background:#050505;color:#d0d0d0;
+  padding:10px;outline:none;
+}
+.bonus-pay-row button{
+  border:1px solid #343434;background:#090909;color:#aaa;font-size:8px;
+  letter-spacing:.06em;
+}
+.bonus-pay-note{margin-top:8px;color:#4f4f4f;font-size:8px;line-height:1.45}
+.completion-bonus{
+  border:1px solid #2a2a2a;background:#030303;margin-top:18px;padding:13px;
+}
+.completion-bonus strong{display:block;font-size:11px;font-weight:400}
+.completion-bonus span{display:block;margin-top:7px;color:#696969;font-size:9px;line-height:1.45}
+
+
+.menu button.bonus-menu-btn{grid-template-columns:36px 1fr auto}
+.menu-bonus-balance{
+  color:#777;
+  font-size:10px;
+  letter-spacing:.01em;
+  white-space:nowrap;
+  padding-left:10px;
+}
+
 </style>
 </head>
 <body>
@@ -1783,6 +1857,7 @@ button{font:inherit}
     <button data-page="services" style="--d:.51s"><span class="num">02</span><span class="label">Услуги и цены</span></button>
     <button data-page="booking" style="--d:.68s"><span class="num">03</span><span class="label">Запись</span></button>
     <button data-page="garage" style="--d:.85s"><span class="num">04</span><span class="label">Гараж</span></button>
+    <button data-page="bonus" class="bonus-menu-btn" style="--d:1.02s"><span class="num">05</span><span class="label">T-Бонусы</span><span class="menu-bonus-balance" id="menuBonusBalance">0 T</span></button>
   </nav>
   <div class="motto">ЭСТЕТИКА. ВНИМАНИЕ. ДОВЕРИЕ.</div>
   <div id="homeToast" class="home-toast hidden"><strong>Запись сохранена</strong><span>Проверить её можно в разделе «Моя запись».</span></div>
@@ -2427,7 +2502,8 @@ const flowState={
   dateIndex:null,
   time:null,
   garageCarId:null,
-  editingBookingId:null
+  editingBookingId:null,
+  bonusUse:0
 };
 
 function money(n){
@@ -2509,6 +2585,7 @@ function resetFlowSelection(keepEntry=true){
   flowState.time=null;
   flowState.garageCarId=null;
   flowState.editingBookingId=null;
+  flowState.bonusUse=0;
   if(keepEntry) flowState.entry=entry;
 }
 function showFlowCoach(kind){
@@ -2739,15 +2816,93 @@ function renderCustom(){
 const DOW=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
 const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
-const BOOKINGS_KEY='tcity_bookings_v042';
-const FEEDBACKS_KEY='tcity_booking_feedbacks_v042';
+const BOOKINGS_KEY='tcity_bookings_v043';
+const FEEDBACKS_KEY='tcity_booking_feedbacks_v043';
+const BONUS_WALLET_KEY='tcity_tbonus_wallet_v043';
+const T_CITY_TIMEZONE='Asia/Yekaterinburg';
 
 const BOOKING_STATUS={
   waiting:{title:'ЖДЁМ ВАС',short:'Ждём вас'},
   work:{title:'АВТОМОБИЛЬ В РАБОТЕ',short:'Автомобиль в работе'},
-  ready:{title:'ГОТОВ · МОЖНО ЗАБИРАТЬ',short:'Готов'}
+  ready:{title:'ГОТОВ · МОЖНО ЗАБИРАТЬ',short:'Готов'},
+  completed:{title:'ЗАВЕРШЕНО',short:'Завершено'}
 };
-const BOOKING_STATUS_ORDER=['waiting','work','ready'];
+const BOOKING_STATUS_ORDER=['waiting','work','ready','completed'];
+
+function tCityDateParts(date=new Date()){
+  const parts=new Intl.DateTimeFormat('en-CA',{
+    timeZone:T_CITY_TIMEZONE,year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(date).reduce((a,x)=>{a[x.type]=x.value;return a},{});
+  return {year:Number(parts.year),month:Number(parts.month),day:Number(parts.day)};
+}
+function tCityTodayDate(){
+  const p=tCityDateParts();
+  return new Date(p.year,p.month-1,p.day,12,0,0,0);
+}
+function tCityDateKey(date=new Date()){
+  const p=tCityDateParts(date);
+  return `${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
+}
+
+function getBonusWallet(){
+  const raw=storageGet(BONUS_WALLET_KEY);
+  if(raw){
+    try{
+      const w=JSON.parse(raw);
+      if(w && typeof w==='object' && Array.isArray(w.transactions)) return w;
+    }catch(_){}
+  }
+  const demo={
+    balance:2400,
+    earnedTotal:2400,
+    spentTotal:0,
+    transactions:[
+      {id:'tb-demo-1',type:'credit',amount:1500,title:'5% за завершённый визит',date:'14 августа 2026'},
+      {id:'tb-demo-2',type:'credit',amount:900,title:'Подарок T-CITY',date:'2 июля 2026'}
+    ]
+  };
+  storageSet(BONUS_WALLET_KEY,JSON.stringify(demo));
+  return demo;
+}
+function saveBonusWallet(w){
+  storageSet(BONUS_WALLET_KEY,JSON.stringify(w));
+  updateBonusMenu();
+}
+function bonusBalance(){return Math.max(0,Number(getBonusWallet().balance)||0)}
+function updateBonusMenu(){
+  const el=document.getElementById('menuBonusBalance');
+  if(el) el.textContent=`${new Intl.NumberFormat('ru-RU').format(bonusBalance())} T`;
+}
+function bonusTx(type,amount,title){
+  amount=Math.max(0,Math.round(Number(amount)||0));
+  if(!amount) return;
+  const w=getBonusWallet();
+  if(type==='credit'){
+    w.balance=(Number(w.balance)||0)+amount;
+    w.earnedTotal=(Number(w.earnedTotal)||0)+amount;
+  }else{
+    w.balance=Math.max(0,(Number(w.balance)||0)-amount);
+    w.spentTotal=(Number(w.spentTotal)||0)+amount;
+  }
+  w.transactions.unshift({
+    id:`tb-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    type,amount,title,date:new Intl.DateTimeFormat('ru-RU',{timeZone:T_CITY_TIMEZONE,day:'numeric',month:'long',year:'numeric'}).format(new Date())
+  });
+  saveBonusWallet(w);
+}
+function settleBookingBonuses(b){
+  if(b.bonusSettled) return b;
+  const use=Math.min(Math.max(0,Math.round(Number(b.bonusUse)||0)),bonusBalance(),Math.round(Number(b.total)||0));
+  if(use) bonusTx('debit',use,`Оплата визита · ${b.vehicleName}`);
+  const rubPaid=Math.max(0,Math.round((Number(b.total)||0)-use));
+  const cashback=Math.round(rubPaid*0.05);
+  if(cashback) bonusTx('credit',cashback,`5% за визит · ${b.vehicleName}`);
+  b.bonusUse=use;
+  b.cashPaid=rubPaid;
+  b.cashback=cashback;
+  b.bonusSettled=true;
+  return b;
+}
 
 function bookingId(){
   if(window.crypto && typeof window.crypto.randomUUID==='function'){
@@ -2767,11 +2922,18 @@ function normalizeBooking(b){
 function migrateOldBooking042(){
   if(storageGet(BOOKINGS_KEY)!==null) return;
   let migrated=[];
+  const v042=storageGet('tcity_bookings_v042');
+  if(v042){
+    try{
+      const arr=JSON.parse(v042);
+      if(Array.isArray(arr)) migrated=arr.map(normalizeBooking).filter(Boolean);
+    }catch(_){}
+  }
   const oldRaw=storageGet('tcity_current_booking');
   if(oldRaw){
     try{
       const old=normalizeBooking(JSON.parse(oldRaw));
-      if(old) migrated=[old];
+      if(old && !migrated.length) migrated=[old];
     }catch(_){}
   }
   storageSet(BOOKINGS_KEY,JSON.stringify(migrated));
@@ -2851,8 +3013,7 @@ function dateHasAnyStart(index,key){
   return false;
 }
 function dateItems(){
-  const base=new Date();
-  base.setHours(12,0,0,0);
+  const base=tCityTodayDate();
   const items=[];
   for(let i=0;i<14;i++){
     const d=new Date(base);
@@ -2979,14 +3140,42 @@ function renderBookingAction(){
   if(holder) holder.remove();
   if(flowState.time===null) return;
 
+  const calc=calcSelection();
+  const balance=bonusBalance();
+  flowState.bonusUse=Math.min(Math.max(0,Math.round(Number(flowState.bonusUse)||0)),balance,Math.round(calc.total));
+
   const wrap=document.createElement('div');
   wrap.id='bookingAction';
   wrap.className='flow-section';
   wrap.innerHTML=`
+    <div class="bonus-pay-card">
+      <div class="bonus-pay-top">
+        <strong>T-БОНУСЫ</strong>
+        <span>Баланс: ${new Intl.NumberFormat('ru-RU').format(balance)} T</span>
+      </div>
+      <div class="bonus-pay-row">
+        <input id="bonusUseInput" type="number" min="0" max="${Math.min(balance,calc.total)}" step="1" value="${flowState.bonusUse}" placeholder="Сколько использовать">
+        <button id="bonusUseApply">ПРИМЕНИТЬ</button>
+      </div>
+      <div class="bonus-pay-note">
+        1 T-Бонус = 1 ₽ на услуги T-CITY. 5% начисляется только на часть визита, оплаченную рублями.
+      </div>
+      ${flowState.bonusUse?`<div class="bonus-pay-note" style="color:#858585">К оплате рублями: ${money(Math.max(0,calc.total-flowState.bonusUse))}</div>`:''}
+    </div>
     <button class="flow-btn primary" id="confirmBooking" style="width:100%;min-height:48px">${flowState.editingBookingId?'СОХРАНИТЬ ИЗМЕНЕНИЯ':'ЗАПИСАТЬСЯ'}</button>
   `;
   const area=document.getElementById('timeArea');
   area.appendChild(wrap);
+
+  document.getElementById('bonusUseApply').addEventListener('click',()=>{
+    const input=document.getElementById('bonusUseInput');
+    flowState.bonusUse=Math.min(
+      Math.max(0,Math.round(Number(input?.value)||0)),
+      balance,
+      Math.round(calc.total)
+    );
+    renderBookingAction();
+  });
   document.getElementById('confirmBooking').addEventListener('click',saveBooking);
 }
 
@@ -3005,6 +3194,7 @@ function bookingSnapshot(){
     dateKey:flowState.dateKey,
     time:flowState.time,
     total:calc.total,
+    bonusUse:Math.min(Math.max(0,Math.round(Number(flowState.bonusUse)||0)),bonusBalance(),Math.round(calc.total)),
     hours:reserveHours(),
     rows:calc.rows,
     address:'г. Тюмень, ул. Василия Шамова, 8'
@@ -3036,6 +3226,8 @@ function detailRows(b){
       <div class="order-row"><span>Время</span><span>${String(b.time).padStart(2,'0')}:00</span></div>
       <div class="order-row"><span>Ориентировочное время</span><span>${hourText(b.hours)}</span></div>
       <div class="order-row"><span>Предварительная стоимость</span><span>${money(b.total)}</span></div>
+      ${Number(b.bonusUse)>0?`<div class="order-row"><span>T-Бонусы</span><span>−${new Intl.NumberFormat('ru-RU').format(b.bonusUse)} T</span></div>
+      <div class="order-row"><span>К оплате рублями</span><span>${money(Math.max(0,(Number(b.total)||0)-(Number(b.bonusUse)||0)))}</span></div>`:''}
     </div>
     <div class="address-card" style="text-align:left">
       <div class="flow-section-title">АДРЕС</div>
@@ -3093,7 +3285,8 @@ function bookingStatusTimeline(b){
   const labels=[
     ['ЖДЁМ ВАС','Запись подтверждена'],
     ['АВТОМОБИЛЬ В РАБОТЕ','Работы начались'],
-    ['ГОТОВ','Можно забирать']
+    ['ГОТОВ','Можно забирать'],
+    ['ЗАВЕРШЕНО','Автомобиль выдан']
   ];
   return `
     <div class="booking-status">
@@ -3220,6 +3413,7 @@ function renderFeedbackThanks(){
         <div class="confirm-mark">✓</div>
         <div class="confirm-title">СПАСИБО</div>
         <div class="confirm-sub">Обратная связь сохранена.<br>Будем рады видеть вас снова.</div>
+        <div class="completion-bonus"><strong>T-БОНУСЫ</strong><span>Текущий баланс: ${new Intl.NumberFormat('ru-RU').format(bonusBalance())} T</span></div>
         <div class="confirm-actions">
           <button class="flow-btn primary" id="feedbackHome">ГЛАВНОЕ МЕНЮ</button>
           <button class="flow-btn" id="feedbackNewBooking">ЗАПИСАТЬСЯ СНОВА</button>
@@ -3239,6 +3433,7 @@ function advanceBookingStatus(id){
   const i=bookingStatusIndex(b.status);
   if(i<BOOKING_STATUS_ORDER.length-1){
     b.status=BOOKING_STATUS_ORDER[i+1];
+    if(b.status==='completed') settleBookingBonuses(b);
     saveBookings(items);
   }
   renderCurrentBooking(id);
@@ -3259,7 +3454,7 @@ function renderCurrentBooking(input){
   setFlowStep('МОЯ ЗАПИСЬ');
   flowSummary.classList.add('hidden');
   const isWaiting=b.status==='waiting';
-  const isReady=b.status==='ready';
+  const isCompleted=b.status==='completed';
 
   flowBody.innerHTML=`
     <div class="flow-enter">
@@ -3270,7 +3465,13 @@ function renderCurrentBooking(input){
       ${detailRows(b)}
       ${preliminaryBookingCard()}
 
-      ${isReady?renderBookingFeedback(b):''}
+      ${isCompleted?`
+        <div class="completion-bonus">
+          <strong>ВИЗИТ ЗАВЕРШЁН</strong>
+          <span>${Number(b.bonusUse)>0?`Использовано ${new Intl.NumberFormat('ru-RU').format(b.bonusUse)} T-Бонусов. `:''}${Number(b.cashback)>0?`Начислено +${new Intl.NumberFormat('ru-RU').format(b.cashback)} T-Бонусов (5% от оплаченной рублями части).`:''}</span>
+        </div>
+        ${renderBookingFeedback(b)}
+      `:''}
 
       <div class="confirm-actions">
         <button class="flow-btn primary" id="currentHome">ГЛАВНОЕ МЕНЮ</button>
@@ -3279,7 +3480,7 @@ function renderCurrentBooking(input){
         ${isWaiting?'<button class="flow-btn" id="currentCancel">ОТМЕНИТЬ ЗАПИСЬ</button>':''}
       </div>
 
-      ${!isReady?`
+      ${!isCompleted?`
         <button class="booking-demo-status" id="demoNextStatus">ДЕМО · СЛЕДУЮЩИЙ СТАТУС</button>
         <div class="booking-demo-note">В реальной версии статус меняется из T-CITY ADMIN.</div>
       `:''}
@@ -3296,8 +3497,10 @@ function renderCurrentBooking(input){
     change.addEventListener('click',()=>{
       if(b.garageCarId && GARAGE_CARS.some(c=>c.id===b.garageCarId)){
         startGarageBooking(b.garageCarId,b.id);
+        flowState.bonusUse=Number(b.bonusUse)||0;
       }else{
         renderVehicle('booking',b.id);
+        flowState.bonusUse=Number(b.bonusUse)||0;
       }
     });
   }
@@ -3308,7 +3511,7 @@ function renderCurrentBooking(input){
   const next=document.getElementById('demoNextStatus');
   if(next) next.addEventListener('click',()=>advanceBookingStatus(b.id));
 
-  if(isReady) bindBookingFeedback(b);
+  if(isCompleted) bindBookingFeedback(b);
 }
 
 function openCancelBookingSheet(id){
@@ -3483,6 +3686,40 @@ function showGarageList(){
   setTimeout(()=>showGarageCoach('garage'),170);
 }
 
+function showBonusWallet(source='home'){
+  showGarage();
+  selectedGarageCarId=null;
+  setGarageBack(source==='profile'?'wallet-profile':'wallet-home');
+  garageBrand.textContent='T-БОНУСЫ';
+  garageProfileBtn.classList.add('hidden');
+  const w=getBonusWallet();
+  garageBody.innerHTML=`
+    <div class="garage-enter">
+      <div class="garage-kicker">T-CITY | ВНУТРЕННЯЯ ВАЛЮТА</div>
+      <h1 class="garage-title">T-БОНУСЫ</h1>
+      <div class="tbonus-wallet-head">
+        <span class="tbonus-coin"><img src="tcity-logo-final.png" alt=""></span>
+        <div class="tbonus-big">${new Intl.NumberFormat('ru-RU').format(w.balance||0)} T</div>
+        <div class="tbonus-label">ВАШ БАЛАНС</div>
+        <div class="tbonus-rule">После завершённого визита 5% от суммы, оплаченной рублями, возвращается на баланс. 1 T-Бонус = 1 ₽ на услуги T-CITY.</div>
+      </div>
+      <div class="garage-section" style="margin-top:16px">
+        <div class="garage-row"><span>Начислено за всё время</span><span>${new Intl.NumberFormat('ru-RU').format(w.earnedTotal||0)} T</span></div>
+        <div class="garage-row"><span>Потрачено</span><span>${new Intl.NumberFormat('ru-RU').format(w.spentTotal||0)} T</span></div>
+      </div>
+      <div class="garage-section-title" style="margin-top:22px">ИСТОРИЯ</div>
+      <div class="tbonus-history">
+        ${(w.transactions||[]).length?(w.transactions||[]).map(tx=>`
+          <div class="tbonus-tx">
+            <span><strong>${escapeHtml(tx.title||'Операция')}</strong><small>${escapeHtml(tx.date||'')}</small></span>
+            <span class="${tx.type==='credit'?'tbonus-positive':'tbonus-negative'}">${tx.type==='credit'?'+':'−'}${new Intl.NumberFormat('ru-RU').format(tx.amount||0)} T</span>
+          </div>`).join(''):'<div class="garage-list-note">Операций пока нет.</div>'}
+      </div>
+      <div class="garage-list-note">В прототипе баланс хранится только на этом устройстве. После подключения сервера кошелёк будет единым для клиента и ADMIN.</div>
+    </div>`;
+  garageBody.scrollTop=0;
+}
+
 function showGarageCar(id){
   const car=GARAGE_CARS.find(c=>c.id===id);if(!car) return;
   showGarage();
@@ -3617,16 +3854,23 @@ function showClientProfile(){
       <div class="garage-section">
         <div class="garage-row"><span>Автомобилей в гараже</span><span>${GARAGE_CARS.length}</span></div>
         <div class="garage-row"><span>Профиль</span><span>Создан T-CITY</span></div>
+        <button class="garage-row" id="profileBonusLink" style="width:100%;border-left:0;border-right:0;border-top:0;background:transparent;color:inherit;text-align:left">
+          <span>T-Бонусы</span><span>${new Intl.NumberFormat('ru-RU').format(bonusBalance())} T&nbsp;&nbsp;→</span>
+        </button>
       </div>
       <div class="profile-note">В реальной версии профиль создаётся T-CITY после первого посещения. Здесь пока используются тестовые данные для проверки интерфейса.</div>
     </div>
-  </div>`;garageBody.scrollTop=0;
+  </div>`;
+  garageBody.scrollTop=0;
+  document.getElementById('profileBonusLink').addEventListener('click',()=>showBonusWallet('profile'));
 }
 
 garageProfileBtn.addEventListener('click',showClientProfile);
 garageBackBtn.addEventListener('click',()=>{
   if(garageView==='list'){closeGarage();return}
   if(garageView==='profile'){if(selectedGarageCarId) showGarageCar(selectedGarageCarId); else showGarageList();return}
+  if(garageView==='wallet-home'){closeGarage();return}
+  if(garageView==='wallet-profile'){showClientProfile();return}
   if(['history','info','preferences'].includes(garageView)){showGarageCar(selectedGarageCarId);return}
   if(garageView==='car'){showGarageList();return}
   showGarageList();
@@ -3643,6 +3887,7 @@ function startGarageBooking(id,editingBookingId=null){
   flowState.dateIndex=null;
   flowState.time=null;
   flowState.editingBookingId=editingBookingId;
+  flowState.bonusUse=0;
   renderPackages();
 }
 
@@ -3674,6 +3919,10 @@ document.querySelectorAll('.menu button').forEach(btn=>{
       showGarageList();
       return;
     }
+    if(target==='bonus'){
+      showBonusWallet('home');
+      return;
+    }
   });
 });
 document.querySelector('.back').addEventListener('click',()=>{
@@ -3682,6 +3931,7 @@ document.querySelector('.back').addEventListener('click',()=>{
 });
 
 updateBookingMenu();
+updateBonusMenu();
 
 
 /* =========================================================
