@@ -4507,5 +4507,364 @@ shade.addEventListener('click',e=>{if(e.target===shade)closeSheet()});
 syncNotificationDot();
 
 </script>
+
+
+<!-- T-CITY CLIENT v0.5 · real backend bridge -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+/* ============================================================
+   T-CITY CLIENT v0.5 · REAL BACKEND BRIDGE
+   Wave 04.4 visual/intro/home flow is preserved.
+   Personal data/actions are connected to the T-CITY backend.
+   ============================================================ */
+const CLIENT_API_BASE='https://194-87-130-62.sslip.io';
+const CLIENT_SESSION_KEY='tcity_client_session_v1';
+const CLIENT_PENDING_LOGIN_KEY='tcity_client_pending_login_v1';
+let clientSession=storageGet(CLIENT_SESSION_KEY)||'';
+let clientProfileCache=null;
+let clientBackendReady=false;
+let clientLoginTimer=null;
+let clientAfterLogin=null;
+
+const realStyle=document.createElement('style');
+realStyle.textContent=`
+  .booking-demo-status,.booking-demo-note{display:none!important}
+  .client-login-note{margin-top:15px;color:#5c5c5c;font-size:9px;line-height:1.55;text-align:center}
+  .client-login-status{min-height:18px;margin-top:12px;color:#777;font-size:9px;line-height:1.5;text-align:center}
+`;
+document.head.appendChild(realStyle);
+
+async function clientApi(path,options={}){
+  const headers=new Headers(options.headers||{});
+  if(options.body && !headers.has('Content-Type')) headers.set('Content-Type','application/json');
+  if(clientSession) headers.set('Authorization',`Bearer ${clientSession}`);
+  const response=await fetch(CLIENT_API_BASE+path,{...options,headers});
+  let data=null;
+  try{data=await response.json()}catch(_){data={ok:false,error:`HTTP ${response.status}`}}
+  if(response.status===401 && !path.startsWith('/api/auth/')){
+    clientSession='';storageRemove(CLIENT_SESSION_KEY);clientBackendReady=false;
+  }
+  if(!response.ok || data?.ok===false){
+    const err=new Error(data?.error||`HTTP ${response.status}`);err.status=response.status;err.data=data;throw err;
+  }
+  return data;
+}
+function clientJson(value){return JSON.stringify(value)}
+function clientDateParts(v){
+  const d=new Date(v);
+  const a=new Intl.DateTimeFormat('en-CA',{timeZone:T_CITY_TIMEZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,x)=>{o[x.type]=x.value;return o},{});
+  return {dateKey:`${a.year}-${a.month}-${a.day}`,time:Number(a.hour)};
+}
+function clientRuDate(v){
+  if(!v) return '';
+  return new Intl.DateTimeFormat('ru-RU',{timeZone:T_CITY_TIMEZONE,day:'numeric',month:'long',year:'numeric'}).format(new Date(v));
+}
+function clientCarImage(row){
+  if(row.image_url) return row.image_url;
+  const byPlate={
+    'А073СН172':'garage-passat.png','А937ХУ172':'garage-mercedes-cls-amg.png','У409МО72':'garage-polo.png',
+    'В620ОК172':'garage-lada-2112.png','В500ОР72':'garage-mercedes-cls.png'
+  };
+  return byPlate[row.plate]||'tcity-car.png';
+}
+function clientCarType(row){
+  const t=String(row.body_type||row.make_model||'').toLowerCase();
+  if(t.includes('кроссов')||t.includes('crossover')) return 'crossover';
+  if(t.includes('внедорож')||t.includes('suv')) return 'suv';
+  return 'sedan';
+}
+function clientBrand(name){
+  const n=String(name||'Автомобиль').trim();
+  return (n.split(/\s+/)[0]||'T-CITY').toUpperCase();
+}
+function clientPrefObject(rows=[]){
+  const take=(...names)=>rows.find(x=>names.some(n=>String(x.name||'').toLowerCase()===n.toLowerCase()))?.value||'';
+  const known=new Set(['напиток','аромат','пожелание','пожелания']);
+  return {
+    drink:take('Напиток'),
+    scent:take('Аромат'),
+    wish:take('Пожелание','Пожелания'),
+    custom:rows.filter(x=>!known.has(String(x.name||'').toLowerCase())).map(x=>({name:x.name,value:x.value}))
+  };
+}
+function clientPrefRows(data){
+  const rows=[];
+  if(data.drink) rows.push({name:'Напиток',value:data.drink});
+  if(data.scent) rows.push({name:'Аромат',value:data.scent});
+  if(data.wish) rows.push({name:'Пожелания',value:data.wish});
+  (data.custom||[]).forEach(x=>{if(x?.name&&x?.value)rows.push({name:String(x.name).trim(),value:String(x.value).trim()})});
+  return rows;
+}
+
+async function hydrateClientState(){
+  if(!clientSession) return;
+  const d=await clientApi('/api/client/bootstrap');
+  clientProfileCache=d.profile||null;
+
+  const visitsByCar=new Map();
+  (d.visits||[]).forEach(v=>{
+    const arr=visitsByCar.get(v.car_id)||[];
+    const names=(v.services||[]).map(s=>s.name||s.service_name).filter(Boolean).join(' · ')||'Визит T-CITY';
+    arr.push({date:clientRuDate(v.completed_at),services:names,price:Number(v.total_rub)||0});
+    visitsByCar.set(v.car_id,arr);
+  });
+
+  const mappedCars=(d.cars||[]).map(row=>({
+    id:row.id,brand:clientBrand(row.make_model),name:row.make_model||'Автомобиль',plate:row.plate||'—',
+    type:clientCarType(row),shape:'sedan',image:clientCarImage(row),
+    info:{
+      'Пробег':row.mileage!=null?`${new Intl.NumberFormat('ru-RU').format(row.mileage)} км`:'—',
+      'Госномер':row.plate||'—','Цвет':row.color||'—','Год выпуска':row.year||'—','VIN':row.vin||'—'
+    },
+    visits:visitsByCar.get(row.id)||[]
+  }));
+  GARAGE_CARS.splice(0,GARAGE_CARS.length,...mappedCars);
+
+  const mappedBookings=(d.bookings||[]).filter(b=>b.status!=='cancelled').map(row=>{
+    const z=clientDateParts(row.starts_at);
+    const car=GARAGE_CARS.find(c=>c.id===row.car_id);
+    const services=(row.services||[]).map(x=>({name:x.name||x.service_name||'Услуга',price:Number(x.price_rub??x.price)||0}));
+    return normalizeBooking({
+      id:row.id,createdAt:row.created_at,status:BOOKING_STATUS[row.status]?row.status:'waiting',
+      vehicle:row.vehicle_type||car?.type||'sedan',garageCarId:car?.id||null,
+      vehicleName:row.make_model||car?.name||({sedan:'Седан',crossover:'Кроссовер',suv:'Внедорожник'}[row.vehicle_type]||'Автомобиль'),
+      packageId:null,extras:[],dateKey:z.dateKey,time:z.time,total:Number(row.preliminary_total_rub)||0,
+      bonusUse:Number(row.bonus_spent)||0,cashPaid:Number(row.cash_paid_rub)||0,cashback:Number(row.bonus_earned)||0,
+      bonusSettled:row.status==='completed',hours:Math.max(1,Math.ceil((Number(row.duration_minutes)||60)/60)),
+      rows:services.length?services:[{name:'Визит T-CITY',price:Number(row.preliminary_total_rub)||0}],
+      address:'г. Тюмень, ул. Василия Шамова, 8',visitId:row.visit_id||null
+    });
+  });
+  saveBookings(mappedBookings);
+
+  const tx=(d.wallet?.history||[]).map(x=>({
+    id:x.id,type:x.type,amount:Number(x.amount)||0,title:x.description||'T-Бонусы',date:clientRuDate(x.created_at)
+  }));
+  storageSet(BONUS_WALLET_KEY,JSON.stringify({
+    balance:Number(d.wallet?.balance)||0,
+    earnedTotal:tx.filter(x=>x.type==='credit').reduce((s,x)=>s+x.amount,0),
+    spentTotal:tx.filter(x=>x.type==='debit').reduce((s,x)=>s+x.amount,0),
+    transactions:tx
+  }));
+
+  const prefs=clientPrefObject(d.preferences||[]);
+  GARAGE_CARS.forEach(c=>storageSet(`tcity_garage_preferences_${c.id}`,JSON.stringify(prefs)));
+
+  const notices=(d.notifications||[]).map(n=>({
+    id:n.id,type:String(n.type||'T-CITY').toUpperCase(),title:n.title||'T-CITY',preview:n.message||'',
+    body:n.message||'',read:Boolean(n.read_at),kind:'server',createdAt:n.created_at
+  }));
+  storageSet('tcity_notifications',JSON.stringify(notices));
+
+  clientBackendReady=true;
+  updateBookingMenu();updateBonusMenu();syncNotificationDot();
+}
+
+function runProtectedClientAction(action){
+  if(typeof action==='function') action();
+}
+function showClientLoginGate(message='Для этого раздела подтвердите вход через Telegram.'){
+  showFlow();setFlowStep('ВХОД');flowSummary.classList.add('hidden');
+  flowBody.innerHTML=`<div class="confirm-box flow-enter"><div style="width:100%">
+    <div class="eyebrow">T-CITY | CLIENT</div><div class="confirm-title" style="margin-top:14px">ВОЙТИ В T-CITY</div>
+    <div class="confirm-sub">${escapeHtml(message)}</div>
+    <div class="confirm-actions"><button class="flow-btn primary" id="clientLoginTelegram">ПРОДОЛЖИТЬ В TELEGRAM</button><button class="flow-btn" id="clientLoginBack">НАЗАД</button></div>
+    <div class="client-login-status" id="clientLoginStatus">После подтверждения вы автоматически вернётесь к выбранному действию.</div>
+    <div class="client-login-note">История бренда и услуги доступны без входа.</div>
+  </div></div>`;
+  flowBody.scrollTop=0;
+  document.getElementById('clientLoginTelegram').addEventListener('click',startClientBrowserLogin);
+  document.getElementById('clientLoginBack').addEventListener('click',()=>{clientAfterLogin=null;closeFlow()});
+}
+async function startClientBrowserLogin(){
+  const btn=document.getElementById('clientLoginTelegram');const st=document.getElementById('clientLoginStatus');if(btn)btn.disabled=true;
+  try{
+    const d=await clientApi('/api/auth/browser/start',{method:'POST'});
+    storageSet(CLIENT_PENDING_LOGIN_KEY,d.token);
+    if(st)st.textContent='Откройте T-CITY в Telegram, нажмите «Запустить» и вернитесь сюда.';
+    const w=window.open(d.telegram_link,'_blank');if(!w)location.href=d.telegram_link;
+    pollClientLogin(d.token);
+  }catch(err){if(st)st.textContent=`Ошибка: ${err.message}`;if(btn)btn.disabled=false}
+}
+function pollClientLogin(token){
+  clearInterval(clientLoginTimer);let tries=0;
+  clientLoginTimer=setInterval(async()=>{
+    if(++tries>280){clearInterval(clientLoginTimer);return}
+    try{
+      const st=await clientApi(`/api/auth/browser/status/${encodeURIComponent(token)}`);
+      if(st.confirmed){
+        clearInterval(clientLoginTimer);
+        const ex=await clientApi('/api/auth/browser/exchange',{method:'POST',body:clientJson({token})});
+        clientSession=ex.session_token||'';storageSet(CLIENT_SESSION_KEY,clientSession);storageRemove(CLIENT_PENDING_LOGIN_KEY);
+        await hydrateClientState();
+        closeFlow();const action=clientAfterLogin;clientAfterLogin=null;runProtectedClientAction(action);
+      }
+    }catch(err){console.error('T-CITY login:',err)}
+  },1500);
+}
+async function tryTelegramMiniAppLogin(){
+  if(clientSession) return false;
+  try{
+    const tg=window.Telegram?.WebApp;
+    if(!tg?.initData) return false;
+    try{tg.ready();tg.expand()}catch(_){}
+    const d=await clientApi('/api/auth/telegram',{method:'POST',body:clientJson({initData:tg.initData})});
+    clientSession=d.session_token||'';storageSet(CLIENT_SESSION_KEY,clientSession);
+    await hydrateClientState();return true;
+  }catch(err){console.error('Telegram Mini App auth:',err);return false}
+}
+async function ensureClientAuth(action){
+  if(clientSession){
+    try{if(!clientBackendReady)await hydrateClientState();runProtectedClientAction(action);return true}
+    catch(err){if(err.status!==401){alert(`Ошибка сервера: ${err.message}`);return false}}
+  }
+  clientAfterLogin=action;
+  if(await tryTelegramMiniAppLogin()){
+    const a=clientAfterLogin;clientAfterLogin=null;runProtectedClientAction(a);return true;
+  }
+  showClientLoginGate();return false;
+}
+
+// Browser: only personal sections trigger authorization. Telegram Mini App authenticates silently.
+document.querySelectorAll('.menu button[data-page="booking"],.menu button[data-page="garage"],.menu button[data-page="bonus"]').forEach(btn=>{
+  btn.addEventListener('click',e=>{
+    if(clientSession) return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const target=btn.dataset.page;
+    ensureClientAuth(()=>{
+      if(target==='booking'){if(getBookings().length)renderBookingsList();else renderVehicle('booking')}
+      if(target==='garage')showGarageList();
+      if(target==='bonus')showBonusWallet('home');
+    });
+  },true);
+});
+
+// Real profile instead of the old demo card.
+showClientProfile=function(){
+  if(!clientSession){ensureClientAuth(showClientProfile);return}
+  const c=clientProfileCache||{};
+  const name=[c.first_name,c.last_name].filter(Boolean).join(' ')||c.telegram_username||'Клиент T-CITY';
+  showGarage();setGarageBack('profile');garageBrand.textContent='ПРОФИЛЬ';garageProfileBtn.classList.add('hidden');
+  garageBody.innerHTML=`<div class="garage-enter">
+    <div class="garage-kicker">T-CITY | CLIENT</div><h1 class="garage-title">ПРОФИЛЬ КЛИЕНТА</h1>
+    <div class="profile-card"><div class="profile-mark"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.2" r="3.1" stroke="currentColor" stroke-width="1.35"/><path d="M5.5 19c.65-4 3-6 6.5-6s5.85 2 6.5 6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg></div>
+      <div class="profile-name">${escapeHtml(name)}</div><div class="profile-phone">${escapeHtml(c.phone||'Телефон пока не указан')}</div>
+      <div class="garage-section"><div class="garage-row"><span>Автомобилей в гараже</span><span>${GARAGE_CARS.length}</span></div>
+      <div class="garage-row"><span>Профиль</span><span>Telegram · T-CITY</span></div>
+      <button class="garage-row" id="profileBonusLink" style="width:100%;border-left:0;border-right:0;border-top:0;background:transparent;color:inherit;text-align:left"><span>T-Бонусы</span><span>${new Intl.NumberFormat('ru-RU').format(bonusBalance())} T&nbsp;&nbsp;→</span></button></div>
+      <div class="profile-note">Профиль и данные синхронизируются с T-CITY ADMIN.</div>
+    </div></div>`;
+  garageBody.scrollTop=0;document.getElementById('profileBonusLink').addEventListener('click',()=>showBonusWallet('profile'));
+};
+garageProfileBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();ensureClientAuth(showClientProfile)},true);
+
+// Preferences are saved on the server; the UI remains the approved free-text Wave 04.4 UI.
+saveGaragePreferencesData=function(id,data){
+  storageSet(`tcity_garage_preferences_${id}`,JSON.stringify(data));
+  if(clientSession){
+    const rows=clientPrefRows(data);
+    clientApi('/api/client/preferences',{method:'PUT',body:clientJson({preferences:rows})})
+      .then(()=>GARAGE_CARS.forEach(c=>storageSet(`tcity_garage_preferences_${c.id}`,JSON.stringify(data))))
+      .catch(err=>console.error('Preferences:',err));
+  }
+};
+
+// Booking creation/editing now writes to PostgreSQL.
+saveBooking=async function(){
+  if(!clientSession){await ensureClientAuth(()=>saveBooking());return}
+  const b=bookingSnapshot();
+  const payload={
+    car_id:b.garageCarId||null,vehicle_type:b.vehicle,
+    starts_at:`${b.dateKey}T${String(b.time).padStart(2,'0')}:00:00+05:00`,
+    duration_minutes:Math.max(60,(Number(b.hours)||1)*60),preliminary_total_rub:Number(b.total)||0,
+    bonus_spent:Number(b.bonusUse)||0,comment:null,services:(b.rows||[]).map(x=>({name:x.name,price_rub:Number(x.price)||0}))
+  };
+  try{
+    const path=flowState.editingBookingId?`/api/client/bookings/${encodeURIComponent(flowState.editingBookingId)}`:'/api/client/bookings';
+    const method=flowState.editingBookingId?'PATCH':'POST';
+    const d=await clientApi(path,{method,body:clientJson(payload)});
+    flowState.editingBookingId=null;
+    await hydrateClientState();
+    const saved=getBookingById(d.booking?.id)||normalizeBooking({...b,id:d.booking?.id||b.id});
+    renderSuccess(saved);
+  }catch(err){
+    const btn=document.getElementById('confirmBooking');if(btn){btn.disabled=false;btn.textContent=flowState.editingBookingId?'СОХРАНИТЬ ИЗМЕНЕНИЯ':'ЗАПИСАТЬСЯ'}
+    alert(err.status===409?'Это время уже занято. Выберите другое окно.':`Не удалось сохранить запись: ${err.message}`);
+    if(err.status===409)renderBooking();
+  }
+};
+
+openCancelBookingSheet=function(id){
+  sheetTitle.textContent='Отменить запись?';sheetText.innerHTML=`<div class="sheet-copy">Дата и время будут освобождены. Это действие можно подтвердить или оставить запись без изменений.</div><div class="sheet-row"><button class="flow-btn" id="keepBooking">ОСТАВИТЬ</button><button class="flow-btn sheet-danger" id="confirmCancelBooking">ОТМЕНИТЬ</button></div>`;
+  shade.classList.remove('hidden');document.getElementById('keepBooking').addEventListener('click',closeSheet);
+  document.getElementById('confirmCancelBooking').addEventListener('click',async()=>{
+    const btn=document.getElementById('confirmCancelBooking');if(btn)btn.disabled=true;
+    try{await clientApi(`/api/client/bookings/${encodeURIComponent(id)}/cancel`,{method:'PATCH'});await hydrateClientState();closeSheet();renderCancelledBooking()}
+    catch(err){if(btn)btn.disabled=false;alert(`Не удалось отменить запись: ${err.message}`)}
+  });
+};
+
+// Notifications are real and read state is synced with ADMIN/backend.
+const legacyNoticeDetailContent=noticeDetailContent;
+noticeDetailContent=function(n){
+  if(n?.kind==='server') return `<div class="notice-detail-copy">${escapeHtml(n.body||n.preview||'')}</div>`;
+  return legacyNoticeDetailContent(n);
+};
+markNotificationRead=function(id){
+  const items=getNotifications();const n=items.find(x=>x.id===id);
+  if(n&&!n.read){n.read=true;saveNotifications(items);if(clientSession)clientApi(`/api/client/notifications/${encodeURIComponent(id)}/read`,{method:'PATCH'}).catch(()=>{})}
+  else syncNotificationDot();
+};
+
+// Completed-visit feedback goes to PostgreSQL and then disappears from active "Мои записи".
+bindBookingFeedback=function(b){
+  let value=0;const stars=[...document.querySelectorAll('[data-booking-star]')];
+  stars.forEach(btn=>btn.addEventListener('click',()=>{value=Number(btn.dataset.bookingStar);stars.forEach(s=>s.classList.toggle('active',Number(s.dataset.bookingStar)<=value))}));
+  const send=document.getElementById('bookingFeedbackSend');if(!send)return;
+  send.addEventListener('click',async()=>{
+    if(!value){const box=document.getElementById('bookingFeedbackStars');if(box)box.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:220});return}
+    const comment=(document.getElementById('bookingFeedbackText')?.value||'').trim();send.disabled=true;
+    try{
+      await clientApi('/api/client/feedback',{method:'POST',body:clientJson({booking_id:b.id,rating:value,comment})});
+      storageSet('tcity_last_feedback',JSON.stringify({rating:value,comment,createdAt:new Date().toISOString()}));
+      await hydrateClientState();renderFeedbackThanks();
+    }catch(err){send.disabled=false;alert(`Не удалось отправить отзыв: ${err.message}`)}
+  });
+};
+
+// Unknown support questions are escalated to the real ADMIN chat when the client is authenticated.
+const legacyRenderSupportChat=renderSupportChat;
+async function syncRealSupport(){
+  if(!clientSession)return;
+  try{
+    const d=await clientApi('/api/support');
+    if(!d.thread||(d.messages||[]).length===0)return;
+    const items=defaultChat();
+    (d.messages||[]).forEach(m=>items.push({side:m.sender==='client'?'user':'bot',text:m.message,time:new Date(m.created_at).toLocaleTimeString('ru-RU',{timeZone:T_CITY_TIMEZONE,hour:'2-digit',minute:'2-digit'})}));
+    saveChat(items);
+  }catch(err){console.error('Support sync:',err)}
+}
+renderSupportChat=async function(){await syncRealSupport();legacyRenderSupportChat()};
+sendSupportMessage=function(prefill=null){
+  const input=document.getElementById('chatInput');const text=(prefill!==null?prefill:(input?input.value:'')).trim();if(!text)return;if(input)input.value='';
+  appendChat('user',text);refreshChatMessages();scrollChatBottom(true);const typing=document.getElementById('chatTyping');if(typing)typing.classList.remove('hidden');
+  const reply=localAssistantReply(text);const needsHuman=reply.startsWith('На этот вопрос лучше ответить персонально');
+  clearTimeout(supportReplyTimer);supportReplyTimer=setTimeout(()=>{appendChat('bot',reply);refreshChatMessages();scrollChatBottom(true)},650);
+  if(needsHuman&&clientSession)clientApi('/api/support',{method:'POST',body:clientJson({message:text})}).catch(err=>console.error('Support send:',err));
+};
+
+async function bootClientBackend(){
+  try{
+    if(clientSession){await hydrateClientState()}
+    else await tryTelegramMiniAppLogin();
+  }catch(err){console.error('T-CITY backend boot:',err);clientSession='';storageRemove(CLIENT_SESSION_KEY);clientBackendReady=false}
+  const pending=storageGet(CLIENT_PENDING_LOGIN_KEY);if(!clientSession&&pending)pollClientLogin(pending);
+}
+
+setInterval(()=>{if(clientSession)hydrateClientState().catch(()=>{})},15000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&clientSession)hydrateClientState().catch(()=>{})});
+bootClientBackend();
+</script>
+
 </body>
 </html>
