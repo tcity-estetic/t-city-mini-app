@@ -2228,7 +2228,7 @@ const historyPages=[
       <div class="history-kicker">02 / 06</div>
       <h1 class="history-title wide">С ЧЕГО ВСЁ НАЧАЛОСЬ</h1>
       <div class="history-copy">
-        <p>Идея T-CITY появилась ещё в 16–17 лет.</p>
+        <p>Идея T-CITY появилась ещё в 2018 году, когда мне было 16 лет.</p>
         <p>Сначала это было простое понимание: если однажды хочется создать что-то действительно большое, нужно строить не только свою работу, а собственную систему.</p>
         <p>Постепенно появились первые идеи, направления и понимание того, как они могут быть связаны между собой.</p>
         <p>Со временем всё это превратилось в полноценный бизнес-план.</p>
@@ -3715,7 +3715,6 @@ function showBonusWallet(source='home'){
             <span class="${tx.type==='credit'?'tbonus-positive':'tbonus-negative'}">${tx.type==='credit'?'+':'−'}${new Intl.NumberFormat('ru-RU').format(tx.amount||0)} T</span>
           </div>`).join(''):'<div class="garage-list-note">Операций пока нет.</div>'}
       </div>
-      <div class="garage-list-note">В прототипе баланс хранится только на этом устройстве. После подключения сервера кошелёк будет единым для клиента и ADMIN.</div>
     </div>`;
   garageBody.scrollTop=0;
 }
