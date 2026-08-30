@@ -1809,6 +1809,12 @@ button{font:inherit}
   padding-left:10px;
 }
 
+
+.service-flags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.service-flag{display:inline-block;border:1px solid #343434;padding:3px 5px;color:#777;font-size:7px;line-height:1;letter-spacing:.08em}
+.service-flag.new{border-color:#666;color:#d5d5d5}
+.service-flag.popular{border-color:#474747;color:#a9a9a9}
+.special-request-note{margin-top:8px;padding-top:12px;border-top:0;color:#696969}
 </style>
 </head>
 <body>
@@ -2651,6 +2657,7 @@ function renderVehicle(entry='services',editingBookingId=null){
         `).join('')}
       </div>
       <div class="flow-note">Стоимость может измениться после осмотра автомобиля при сильном загрязнении или нестандартном состоянии.</div>
+      <div class="flow-note special-request-note">Работаем также в выездном формате и с нестандартной техникой. Если у вас особый запрос — напишите в поддержку, постараемся подобрать подходящий вариант.</div>
     </div>
   `;
   flowBody.scrollTop=0;
@@ -2786,6 +2793,7 @@ function renderCustom(){
             <button class="service-card ${inc?'included':''} ${sel?'selected':''}" data-service="${s.id}" ${inc?'disabled':''}>
               <span class="service-check">${inc?'':'✓'}</span>
               <span class="service-name">${s.name}</span>
+              ${(s.isNew||s.popular)?`<span class="service-flags">${s.isNew?'<span class="service-flag new">NEW</span>':''}${s.popular?'<span class="service-flag popular">ПОПУЛЯРНО</span>':''}</span>`:''}
               <span>
                 <span class="service-price">${money(s.prices[v])}</span>
               </span>
@@ -2796,6 +2804,7 @@ function renderCustom(){
 
       <button class="flow-back-link" id="backPackages">← К ГОТОВЫМ ПАКЕТАМ</button>
       <div class="flow-note">Стоимость может измениться после осмотра автомобиля при сильном загрязнении или нестандартном состоянии.</div>
+      <div class="flow-note special-request-note">Работаем также в выездном формате и с нестандартной техникой. Если у вас особый запрос — напишите в поддержку, постараемся подобрать подходящий вариант.</div>
     </div>
   `;
 
@@ -3482,7 +3491,6 @@ function renderCurrentBooking(input){
 
       ${!isCompleted?`
         <button class="booking-demo-status" id="demoNextStatus">ДЕМО · СЛЕДУЮЩИЙ СТАТУС</button>
-        <div class="booking-demo-note">В реальной версии статус меняется из T-CITY ADMIN.</div>
       `:''}
     </div>
   `;
@@ -3857,7 +3865,7 @@ function showClientProfile(){
           <span>T-Бонусы</span><span>${new Intl.NumberFormat('ru-RU').format(bonusBalance())} T&nbsp;&nbsp;→</span>
         </button>
       </div>
-      <div class="profile-note">В реальной версии профиль создаётся T-CITY после первого посещения. Здесь пока используются тестовые данные для проверки интерфейса.</div>
+      <div class="profile-note">Профиль клиента связан с его Garage, посещениями и предпочтениями T-CITY.</div>
     </div>
   </div>`;
   garageBody.scrollTop=0;
@@ -4595,6 +4603,31 @@ function clientPrefRows(data){
   return rows;
 }
 
+
+async function hydratePublicCatalog(){
+  try{
+    const d=await clientApi('/api/catalog');
+    const services=(d.services||[]).map(x=>({
+      id:x.code,name:x.name,
+      prices:{sedan:Number(x.price_sedan)||0,crossover:Number(x.price_crossover)||0,suv:Number(x.price_suv)||0},
+      hours:Math.max(.5,(Number(x.duration_minutes)||60)/60),
+      popular:Boolean(x.popular),isNew:Boolean(x.is_new)
+    }));
+    const packages=(d.packages||[]).map(x=>({
+      id:x.code,name:x.name,tag:x.tag||'Комплекс',
+      prices:{sedan:Number(x.price_sedan)||0,crossover:Number(x.price_crossover)||0,suv:Number(x.price_suv)||0},
+      hours:Math.max(1,(Number(x.duration_minutes)||60)/60),
+      desc:x.description||'',includes:x.includes_text||'',includedIds:Array.isArray(x.included_service_codes)?x.included_service_codes:[]
+    }));
+    if(services.length)SERVICES.splice(0,SERVICES.length,...services);
+    if(packages.length)PACKAGES.splice(0,PACKAGES.length,...packages);
+    return true;
+  }catch(err){
+    console.error('T-CITY catalog:',err);
+    return false;
+  }
+}
+
 async function hydrateClientState(){
   if(!clientSession) return;
   const d=await clientApi('/api/client/bootstrap');
@@ -4854,6 +4887,7 @@ sendSupportMessage=function(prefill=null){
 
 async function bootClientBackend(){
   try{
+    await hydratePublicCatalog();
     if(clientSession){await hydrateClientState()}
     else await tryTelegramMiniAppLogin();
   }catch(err){console.error('T-CITY backend boot:',err);clientSession='';storageRemove(CLIENT_SESSION_KEY);clientBackendReady=false}
@@ -4861,7 +4895,8 @@ async function bootClientBackend(){
 }
 
 setInterval(()=>{if(clientSession)hydrateClientState().catch(()=>{})},15000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&clientSession)hydrateClientState().catch(()=>{})});
+setInterval(()=>{hydratePublicCatalog().catch(()=>{})},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){hydratePublicCatalog().catch(()=>{});if(clientSession)hydrateClientState().catch(()=>{})}});
 bootClientBackend();
 </script>
 
